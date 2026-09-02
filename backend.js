@@ -15,6 +15,7 @@
   };
   var SDK = 'https://www.gstatic.com/firebasejs/10.13.2/';
   var TETO_AUDIO = 9000000;
+  var TETO_LOGO = 900000;      /* documento do Firestore tem teto de 1 MiB; a logo processada fica em ~120 KB */
   var ls = window.localStorage;
   var status = { modo: 'local', online: navigator.onLine, ultimoSaveOk: null, ultimoSync: null, pendentes: false };
   var sessaoSalvou = false;
@@ -252,6 +253,7 @@
     gravarMeta({ uid: String(u.uid) });
     FB.trocandoConta = descartou;
     lerRemoto(u.uid).then(function (remoto) {
+      aplicarLogoRemota(remoto._logo, !descartou); delete remoto._logo;
       var merged = merge(remoto, descartou ? CL.defaultState() : CL.state);
       status.ultimoSync = Date.now();
       FB.trocandoConta = false;
@@ -280,6 +282,7 @@
     });
     tarefas.push(fs.getDoc(fs.doc(FB.db, 'users', uid, 'meta', 'cfg')).then(function (s) { st.cfg = s.exists() ? s.data() : null; }));
     tarefas.push(fs.getDoc(fs.doc(FB.db, 'users', uid, 'meta', 'tomb')).then(function (s) { st._tomb = s.exists() ? (s.data().ids || {}) : {}; }));
+    tarefas.push(fs.getDoc(fs.doc(FB.db, 'users', uid, 'meta', 'logo')).then(function (s) { st._logo = s.exists() ? s.data() : null; }));
     return Promise.all(tarefas).then(function () { return st; });
   }
   function emParalelo(itens, n, fn) {
@@ -374,6 +377,7 @@
     });
     FB.unsubs.push(fs.onSnapshot(fs.doc(FB.db, 'users', uid, 'meta', 'cfg'), function (s) { FB.remoto.cfg = s.exists() ? s.data() : null; if (!s.metadata.hasPendingWrites) agendar(); }, aoErro('cfg')));
     FB.unsubs.push(fs.onSnapshot(fs.doc(FB.db, 'users', uid, 'meta', 'tomb'), function (s) { FB.remoto._tomb = s.exists() ? (s.data().ids || {}) : {}; if (!s.metadata.hasPendingWrites) agendar(); }, aoErro('tomb')));
+    FB.unsubs.push(fs.onSnapshot(fs.doc(FB.db, 'users', uid, 'meta', 'logo'), function (s) { if (!s.metadata.hasPendingWrites) aplicarLogoRemota(s.exists() ? s.data() : null, false); }, aoErro('logo')));
   }
   function limparCacheLocal() {
     var chaves = [];
@@ -385,6 +389,51 @@
      cache de OUTRA conta nunca é mesclado nem enviado: é descartado antes de ler o servidor. */
   function donoCache() { var m = lerMeta(); return m.uid ? String(m.uid) : null; }
   function cacheDeOutraConta(uid) { var dono = donoCache(); return !!(uid && dono && dono !== String(uid)); }
+  /* ---------- logo da clínica: pertence à CONTA, não ao navegador ----------
+     localStorage é só cache (a impressão lê síncrono); a fonte é users/{uid}/meta/logo.
+     Por isso "Sair" e a troca de conta podem limpar o cache sem perder a logo: ela volta do servidor. */
+  function logoLocal() { try { return ls.getItem(K.logo) || ''; } catch (e) { return ''; } }
+  function logoMeta() { var m = lerMeta().logo; return (m && typeof m === 'object') ? m : {}; }
+  function gravarLogoLocal(dataUrl, updatedAt, sincronizada) {
+    try { if (dataUrl) ls.setItem(K.logo, dataUrl); else ls.removeItem(K.logo); }
+    catch (e) { avisarCota(); return false; }
+    gravarMeta({ logo: { updatedAt: updatedAt || Date.now(), sincronizadaEm: sincronizada ? Date.now() : null } });
+    return true;
+  }
+  function logoPendente() {
+    var m = logoMeta();
+    if (!(+m.updatedAt || 0) && !logoLocal()) return false;      /* navegador que nunca teve logo não empurra nada */
+    return !m.sincronizadaEm || (+m.updatedAt || 0) > (+m.sincronizadaEm || 0);
+  }
+  function enviarLogo() {
+    if (status.modo !== 'firebase' || !FB.uid || !FB.mods) return Promise.resolve(false);
+    var dataUrl = logoLocal();
+    var updatedAt = +logoMeta().updatedAt || Date.now();
+    if (dataUrl.length > TETO_LOGO) {
+      CL.ui.toast('A logo é grande demais para sincronizar; ela fica só neste navegador. Use uma imagem menor.', { kind: 'aviso', ms: 8000 });
+      return Promise.resolve(false);
+    }
+    var fs = FB.mods.fs;
+    return fs.setDoc(fs.doc(FB.db, 'users', FB.uid, 'meta', 'logo'), { dataUrl: dataUrl, updatedAt: updatedAt })
+      .then(function () { gravarMeta({ logo: { updatedAt: updatedAt, sincronizadaEm: Date.now() } }); return true; })
+      .catch(function (e) { console.error('[Backend] a logo não subiu', e); return false; });
+  }
+  function aplicarLogoRemota(doc, podeEnviar) {
+    var localTs = +logoMeta().updatedAt || 0;   /* 0 = este navegador nunca gravou logo (ou vem de antes deste campo) */
+    if (doc && typeof doc === 'object') {
+      var rt = +doc.updatedAt || 0;
+      /* decide por data, não por "tem logo aqui": senão uma remoção feita neste navegador
+         ressuscitaria a logo antiga que ainda está no servidor. */
+      if (!localTs || rt >= localTs) {
+        var url = typeof doc.dataUrl === 'string' ? doc.dataUrl : '';
+        if (url !== logoLocal()) gravarLogoLocal(url, rt || Date.now(), true);
+        else gravarMeta({ logo: { updatedAt: rt || localTs, sincronizadaEm: Date.now() } });
+        return;
+      }
+    }
+    if (podeEnviar && logoPendente()) enviarLogo();               /* servidor sem logo (ou mais velha): sobe a daqui */
+  }
+
   function descartarCacheDeOutraConta(uid) {
     if (!cacheDeOutraConta(uid)) return false;
     var c = contagens(parseSeguro(ls.getItem(K.state)) || {});
@@ -401,6 +450,7 @@
       var local = Local.load();
       if (!FB.uid) return Promise.resolve(local);
       return lerRemoto(FB.uid).then(function (remoto) {
+        aplicarLogoRemota(remoto._logo, true); delete remoto._logo;
         var merged = merge(remoto, local);
         status.ultimoSync = Date.now();
         return merged;
@@ -505,7 +555,10 @@
         if (status.modo !== 'firebase') return Promise.resolve();
         FB.saindo = true;
         pararSnapshots();
-        return FB.mods.auth.signOut(FB.auth).catch(function (e) { console.error(e); }).then(function () {
+        /* A logo é da conta: garante que subiu antes de limpar este navegador (senão o "Sair" a perderia). */
+        return (logoPendente() ? enviarLogo() : Promise.resolve(false)).then(function () {
+          return FB.mods.auth.signOut(FB.auth).catch(function (e) { console.error(e); });
+        }).then(function () {
           limparCacheLocal();
           FB.uid = null;
           if (FB.mods.fs.clearIndexedDbPersistence) {
@@ -583,13 +636,13 @@
     },
     limparRuins: function () { Backend.chavesRuins().forEach(function (r) { ls.removeItem(r.chave); }); },
     exportar: function () {
-      return JSON.stringify({ app: 'clinicar', versao: 1, exportadoEm: new Date().toISOString(), state: CL.state });
+      /* a logo vive fora do state (é da conta, não de uma coleção): sem ela o backup não devolveria os documentos como eram */
+      return JSON.stringify({ app: 'clinicar', versao: 1, exportadoEm: new Date().toISOString(), logo: logoLocal(), state: CL.state });
     },
     logo: {
-      get: function () { try { return ls.getItem(K.logo) || ''; } catch (e) { return ''; } },
-      set: function (dataUrl) {
-        try { if (dataUrl) ls.setItem(K.logo, dataUrl); else ls.removeItem(K.logo); } catch (e) { avisarCota(); }
-      }
+      get: logoLocal,
+      set: function (dataUrl) { gravarLogoLocal(dataUrl || '', Date.now(), false); return enviarLogo(); },
+      pendente: logoPendente
     },
     meta: { get: lerMeta, set: gravarMeta },
     status: function () {

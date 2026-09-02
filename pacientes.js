@@ -667,11 +667,11 @@
       var prazo = pd.prazo || (pd.em + PRAZO_LGPD_DIAS * 86400000);
       var dias = Math.ceil((prazo - Date.now()) / 86400000);
       var st = pd.status === 'atendido' ? '<span class="chip chip-ok">atendido</span>' : (dias < 0 ? '<span class="chip chip-erro">prazo vencido</span>' : '<span class="chip chip-aviso">' + dias + ' dia(s) restantes</span>');
-      return '<li><span style="flex:1"><strong>' + e({ eliminacao: 'Eliminação', correcao: 'Correção', copia: 'Cópia' }[pd.tipo] || pd.tipo) + '</strong> · <span class="tnum">' + e(CL.fmt.dataHora(pd.em)) + '</span>' + (pd.obs ? '<br><small class="texto-3">' + e(pd.obs) + '</small>' : '') + '</span>' + st +
+      return '<li><span class="cresce"><strong>' + e({ eliminacao: 'Eliminação', correcao: 'Correção', copia: 'Cópia' }[pd.tipo] || pd.tipo) + '</strong> · <span class="tnum">' + e(CL.fmt.dataHora(pd.em)) + '</span>' + (pd.obs ? '<br><small class="texto-3">' + e(pd.obs) + '</small>' : '') + '</span>' + st +
         (admin && pd.status === 'aberto' ? '<button type="button" class="btn btn-neutro btn-pequeno" data-acao="lgpd-atender" data-idx="' + pd._i + '">Marcar atendido</button>' : '') + '</li>';
     }).join('') + '</ul>' : '<p class="texto-3">Nenhum pedido</p>', 'ti-mail');
     h += bloco('Compartilhamentos', comp.length ? '<ul class="lista-simples">' + comp.slice(0, 30).map(function (c) { return '<li><span class="tnum">' + e(CL.fmt.dataHora(c.em)) + '</span><span>' + e({ impressao: 'Impressão', exportacao: 'Exportação', whatsapp: 'WhatsApp' }[c.tipo] || c.tipo) + (c.alvo ? ' · ' + e(c.alvo) : '') + '</span></li>'; }).join('') + '</ul>' : '<p class="texto-3">Nenhum compartilhamento registrado</p>', 'ti-share');
-    h += bloco('Histórico de acessos', acessos.length ? '<ul class="lista-simples">' + acessos.map(function (a) { return '<li><span class="tnum">' + e(CL.fmt.dataHora(a.em)) + '</span><span style="flex:1">' + e(ACOES_AUDIT[a.acao] || a.acao) + '</span><small class="texto-3">' + e(a.usuario || '') + (a.perfil ? ' · ' + e(CL.fmt.perfil(a.perfil)) : '') + '</small></li>'; }).join('') + '</ul>' : '<p class="texto-3">Nenhum acesso registrado</p>', 'ti-history');
+    h += bloco('Histórico de acessos', acessos.length ? '<ul class="lista-simples">' + acessos.map(function (a) { return '<li><span class="tnum">' + e(CL.fmt.dataHora(a.em)) + '</span><span class="cresce">' + e(ACOES_AUDIT[a.acao] || a.acao) + '</span><small class="texto-3">' + e(a.usuario || '') + (a.perfil ? ' · ' + e(CL.fmt.perfil(a.perfil)) : '') + '</small></li>'; }).join('') + '</ul>' : '<p class="texto-3">Nenhum acesso registrado</p>', 'ti-history');
     h += '</div>';
     box.innerHTML = h;
   }

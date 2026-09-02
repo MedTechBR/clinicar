@@ -1,15 +1,22 @@
 /* Clinicar — styles.css
    Tokens (ESPEC §7.1), reset, tipografia, componentes (§7.3), casca, grade da agenda e impressão.
-   Uma cor de acento (azul clínico). Cores semânticas só para status/feedback. Sem gradientes. */
+   Uma cor de acento (verde Clinicar). Cores semânticas só para status/feedback. Sem gradientes.
+   Todos os tokens vivem NESTE :root — não existe camada de tema redefinindo :root mais abaixo. */
 
 :root {
-  --acento:#2B5CE6; --acento-hover:#244FC7; --acento-fraco:#E3EAFD; --acento-texto:#1E43B8;
-  --tinta:#23272E; --tinta-2:#4B515A; --tinta-3:#626973; /* tinta-3 era #6B7280: escurecida para dar AA (4,9:1) sobre --painel */
-  --papel:#FAFAF8; --painel:#F1F1EC; --linha:#E8E8E2; --linha-forte:#D6D6CF; --branco:#FFFFFF;
-  --ok:#1E7F4F; --ok-fraco:#DDF5E6; --aviso:#8A5A00; --aviso-fraco:#FFF1D6; --erro:#A32D24; --erro-fraco:#FDE3E1;
-  --sombra-1:0 1px 2px rgba(35,39,46,.06); --sombra-2:0 6px 20px rgba(35,39,46,.10); --sombra-3:0 16px 48px rgba(35,39,46,.16);
-  --raio-1:6px; --raio-2:10px; --raio-3:14px;
+  /* acento: verde profundo; o azul genérico de software clínico não é a identidade do produto */
+  --acento:#0B6B4F; --acento-hover:#085440; --acento-fraco:#E2F0E9; --acento-texto:#0A5A42; --acento-claro:#5FD3A6;
+  /* o "agora": paciente em atendimento, linha da hora, o que exige ação */
+  --agora:#C8442A; --agora-fraco:#FCE7E0; --agora-texto:#A03318;
+  /* tinta com viés verde sobre papel quente (tinta-3 dá 5,1:1 sobre --painel) */
+  --tinta:#17211C; --tinta-2:#3E4944; --tinta-3:#5C665F;
+  --papel:#FBFAF7; --painel:#F0EEE7; --linha:#E4E1D7; --linha-forte:#CFCBBD; --branco:#FFFFFF;
+  --ok:#0B5B39; --ok-fraco:#DCEFE4; --aviso:#7A4A00; --aviso-fraco:#FFEBCC; --erro:#98252F; --erro-fraco:#FADDE0;
+  /* sombra quase invisível: a hierarquia vem da linha e da cor, não do blur */
+  --sombra-1:0 1px 1px rgba(23,33,28,.05); --sombra-2:0 4px 14px rgba(23,33,28,.08); --sombra-3:0 14px 40px rgba(23,33,28,.14);
+  --raio-1:4px; --raio-2:8px; --raio-3:12px;
   --fonte:'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --display:'Bricolage Grotesque', 'Inter', system-ui, sans-serif;   /* só títulos e marca; dado é sempre Inter */
   --t-12:12px; --t-13:13px; --t-14:14px; --t-16:16px; --t-20:20px; --t-24:24px; --t-30:30px;
   --e-1:4px; --e-2:8px; --e-3:12px; --e-4:16px; --e-5:24px; --e-6:32px; --e-7:48px;
   --hora-px:60px;
@@ -178,17 +185,18 @@ input, select, textarea { font-family:inherit; font-size:16px; color:var(--tinta
 .chip-ponto { width:8px; height:8px; border-radius:50%; background:var(--tinta-3); flex:none; }
 .chip-erro { background:var(--erro-fraco); color:var(--erro); }
 .chip-aviso { background:var(--aviso-fraco); color:var(--aviso); }
-.chip-ok { background:var(--ok-fraco); color:#14663A; } /* --ok sobre --ok-fraco dá 4,35:1; #14663A dá 6,1:1 */
+.chip-ok { background:var(--ok-fraco); color:var(--ok); }   /* #0B5B39 sobre #DCEFE4 = 6,8:1 */
 .chip-acento { background:var(--acento-fraco); color:var(--acento-texto); }
-.st-agendado { background:#EEF0F3; color:#3B4250; }
-.st-confirmado { background:#E3EAFD; color:#1E43B8; }
-.st-chegou { background:#FFF1D6; color:#8A5A00; }
-.st-em_atendimento { background:#DDF5E6; color:#14663A; }
-.st-finalizado { background:#D5E8DB; color:#0F4D2B; }
-.st-faltou { background:#FDE3E1; color:#A32D24; }
-.st-cancelado { background:#F1F1EC; color:#626973; text-decoration:line-through; } /* texto #6B7280 da espec dá 4,27:1; #626973 dá 4,9:1 */
-.st-cancelado_tarde { background:#FDE3E1; color:#A32D24; text-decoration:line-through; }
-.st-cancelado_clinica { background:#F1F1EC; color:#626973; text-decoration:line-through; }
+/* 9 status que se distinguem de relance; todos ≥ 4,5:1 (§7.1). Cor nunca é o único sinal: ícone + rótulo. */
+.st-agendado { background:#E8EAED; color:#333B45; }
+.st-confirmado { background:#DEEAFB; color:#14459E; }
+.st-chegou { background:#FFEBCC; color:#7A4A00; }
+.st-em_atendimento { background:var(--agora-fraco); color:var(--agora-texto); }
+.st-finalizado { background:#DCEFE4; color:#0B5B39; }
+.st-faltou { background:#FADDE0; color:#98252F; }
+.st-cancelado { background:#EDEBE4; color:#5C665F; text-decoration:line-through; }
+.st-cancelado_tarde { background:#FADDE0; color:#98252F; text-decoration:line-through; }
+.st-cancelado_clinica { background:#EDEBE4; color:#5C665F; text-decoration:line-through; }
 .chip.st-cancelado i, .chip.st-cancelado_tarde i, .chip.st-cancelado_clinica i { text-decoration:none; }
 
 /* ---------- tabela ---------- */
@@ -287,7 +295,14 @@ body.has-drawer-lg #toast-raiz { right:calc(min(560px, 100vw) + var(--e-4)); }
 .aviso-inline.is-info { background:var(--acento-fraco); color:var(--acento-texto); }
 .aviso-inline i { font-size:18px; flex:none; }
 .lista-simples { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; }
-.lista-simples > li { display:flex; align-items:center; gap:var(--e-3); min-height:44px; padding:var(--e-2) 0; border-bottom:1px solid var(--linha); }
+/* A linha QUEBRA em vez de estourar o cartão: item de flex não encolhe abaixo do próprio
+   min-content, então sem o wrap o chip e o botão (ex.: pedido de LGPD) eram desenhados fora da
+   borda do .card, por cima do cartão vizinho. Com wrap, eles descem para a linha de baixo. */
+.lista-simples > li { display:flex; flex-wrap:wrap; align-items:center; gap:var(--e-2) var(--e-3); min-height:44px; padding:var(--e-2) 0; border-bottom:1px solid var(--linha); }
+.lista-simples > li > .btn { margin-left:auto; }
+/* Texto que ocupa a sobra da linha. Base de 12rem (e não 0) para que o chip e o botão desçam
+   antes de espremer o texto; min-width:0 para nunca empurrar nada para fora em coluna estreita. */
+.cresce { flex:1 1 12rem; min-width:0; overflow-wrap:break-word; }
 .lista-simples > li:last-child { border-bottom:0; }
 .cadeado { display:flex; align-items:center; gap:var(--e-2); color:var(--tinta-3); padding:var(--e-4); }
 
@@ -525,7 +540,7 @@ body.has-drawer-lg #toast-raiz { right:calc(min(560px, 100vw) + var(--e-4)); }
 .lab-cabeca { display:flex; justify-content:space-between; gap:var(--e-2); align-items:baseline; flex-wrap:wrap; }
 .lab-ultimo { font-size:var(--t-20); font-weight:600; display:inline-flex; align-items:center; gap:6px; }
 .lab-ultimo i { font-size:18px; color:var(--acento-texto); }
-.lab-curva { margin:var(--e-2) 0; }
+.lab-curva { margin:var(--e-2) 0; color:var(--acento); }   /* a curva usa currentColor: segue o acento e não fica azul de outra identidade */
 .lab-curva svg { display:block; max-width:100%; height:auto; }
 .lab-valores summary { cursor:pointer; min-height:32px; display:flex; align-items:center; color:var(--tinta-2); font-weight:500; }
 /* ---------- prévia de impressão ---------- */
@@ -949,30 +964,11 @@ tr.is-inativo td { color:var(--tinta-3); }
 
 
 /* ================================================================
-   IDENTIDADE CLINICAR — camada de tema
-   Substitui a paleta genérica (azul + cinza) por uma identidade
-   própria: verde profundo de confiança, coral para o "agora", papel
-   quente. A cor aqui tem FUNÇÃO — profissional, status e urgência —
-   nunca decoração. Display com personalidade, Inter só para dados.
+   IDENTIDADE CLINICAR — regras de componente
+   Os tokens estão todos no :root do topo (§7.1). Aqui ficam só as
+   decisões de forma: título com display, nav em tinta, faixa do
+   profissional, linha do "agora".
    ================================================================ */
-:root {
-  /* acento: verde profundo, não o azul de todo software de clínica */
-  --acento:#0B6B4F; --acento-hover:#085440; --acento-fraco:#E2F0E9; --acento-texto:#0A5A42;
-  /* o "agora": paciente em atendimento, linha da hora, o que exige ação */
-  --agora:#C8442A; --agora-fraco:#FCE7E0; --agora-texto:#A03318;
-  /* papel quente e tinta com viés verde: tira o cinza de escritório */
-  --papel:#FBFAF7; --painel:#F0EEE7; --branco:#FFFFFF;
-  --linha:#E4E1D7; --linha-forte:#CFCBBD;
-  --tinta:#17211C; --tinta-2:#3E4944; --tinta-3:#5C665F;
-  /* semânticas mais saturadas: precisam ser lidas de relance, de longe */
-  --ok:#0B5B39; --ok-fraco:#DCEFE4; --aviso:#7A4A00; --aviso-fraco:#FFEBCC;
-  --erro:#98252F; --erro-fraco:#FADDE0;
-  /* raios menos uniformes: o "tudo arredondado igual" é o que dá cara de template */
-  --raio-1:4px; --raio-2:8px; --raio-3:12px;
-  /* sombra quase invisível: a hierarquia vem da linha e da cor, não do blur */
-  --sombra-1:0 1px 1px rgba(23,33,28,.05); --sombra-2:0 4px 14px rgba(23,33,28,.08); --sombra-3:0 14px 40px rgba(23,33,28,.14);
-  --display:'Bricolage Grotesque', 'Inter', system-ui, sans-serif;
-}
 h1, h2, h3, .marca, .ag-cabeca h2, .vista-titulo {
   font-family:var(--display); letter-spacing:-.015em; font-weight:600;
 }
@@ -982,17 +978,7 @@ h1, h2, h3, .marca, .ag-cabeca h2, .vista-titulo {
 #nav { background:var(--tinta); border-right:0; }
 #nav a, #nav button { color:#A9B4AE; }
 #nav a:hover, #nav button:hover { color:#FFFFFF; background:rgba(255,255,255,.07); }
-#nav .is-ativo, #nav [aria-current="page"] { color:#FFFFFF; background:rgba(255,255,255,.12); box-shadow:inset 3px 0 0 var(--acento-claro,#5FD3A6); }
-
-/* status: 7 estados que se distinguem de relance, cada um com cor própria */
-.st-agendado { background:#E8EAED; color:#333B45; }
-.st-confirmado { background:#DEEAFB; color:#14459E; }
-.st-chegou { background:#FFEBCC; color:#7A4A00; }
-.st-em_atendimento { background:var(--agora-fraco); color:var(--agora-texto); }
-.st-finalizado { background:#DCEFE4; color:#0B5B39; }
-.st-faltou { background:#FADDE0; color:#98252F; }
-.st-cancelado, .st-cancelado_clinica { background:#EDEBE4; color:#5C665F; text-decoration:line-through; }
-.st-cancelado_tarde { background:#FADDE0; color:#98252F; text-decoration:line-through; }
+#nav .is-ativo, #nav [aria-current="page"] { color:#FFFFFF; background:rgba(255,255,255,.12); box-shadow:inset 3px 0 0 var(--acento-claro); }
 
 /* a cor do profissional passa a organizar a agenda, não só enfeitar um chip.
    A cor em si já vem inline de agenda.js; aqui só engrossamos a faixa. */

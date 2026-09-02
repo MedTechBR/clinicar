@@ -79,10 +79,10 @@
     var d = detectar(bruto);
     origem = origem || d.origem;
     if (origem === 'antigo') return mapearAntigo(d.state || bruto);
-    if (origem === 'clinicar') return mapearConsultai(d.state || bruto);
+    if (origem === 'clinicar') return mapearClinicar(d.state || bruto, bruto);
     throw new Error(MSG_NAO_RECONHECIDO);
   }
-  function mapearConsultai(s) {
+  function mapearClinicar(s, envelope) {
     var parcial = { cfgPatch: null, logo: null, _tomb: {} };
     var cont = {}, avisos = [];
     ORDEM.forEach(function (col) {
@@ -101,6 +101,10 @@
       });
     });
     if (s.cfg && typeof s.cfg === 'object') parcial.cfgPatch = Object.assign({}, s.cfg);
+    /* a logo vem no envelope do backup (fora do state, porque é da conta) */
+    var env = (envelope && typeof envelope === 'object') ? envelope : {};
+    var logoArq = typeof env.logo === 'string' ? env.logo : (typeof s.logo === 'string' ? s.logo : '');
+    if (/^data:image\//.test(logoArq) && logoArq.length < 2000000) { parcial.logo = logoArq; avisos.push('Logo da clínica encontrada no arquivo (será usada se ainda não houver logo aqui).'); }
     if (s._tomb && typeof s._tomb === 'object') Object.keys(s._tomb).forEach(function (id) { if (idOk(id) && +s._tomb[id]) parcial._tomb[id] = +s._tomb[id]; });
     var tombN = Object.keys(parcial._tomb).length;
     if (tombN) avisos.push(tombN + ' exclusões registradas no arquivo serão respeitadas (itens apagados lá não voltam).');

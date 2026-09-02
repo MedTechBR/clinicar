@@ -1387,11 +1387,11 @@
     var passo = Math.max(1, Math.ceil(n / 6)), marcas = '';
     serie.forEach(function (s, i) {
       var x = X(i).toFixed(1), y = Y(Number(s.valor) || 0);
-      marcas += '<circle cx="' + x + '" cy="' + y.toFixed(1) + '" r="3.5" fill="#2B5CE6"/>';
+      marcas += '<circle cx="' + x + '" cy="' + y.toFixed(1) + '" r="3.5" fill="currentColor"/>';
       marcas += '<text x="' + x + '" y="' + (y - 7).toFixed(1) + '" font-size="10" text-anchor="middle" fill="#23272E">' + e(String(Math.round(Number(s.valor) * 100) / 100).replace('.', ',')) + '</text>';
       if (i % passo === 0 || i === n - 1) marcas += '<text x="' + x + '" y="' + (H - 8) + '" font-size="9" text-anchor="middle" fill="#4B515A">' + e(CL.fmt.data(s.data).slice(0, 5)) + '</text>';
     });
-    return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Curva de ' + n + ' valores" preserveAspectRatio="xMidYMid meet"><polyline points="' + linha + '" fill="none" stroke="#2B5CE6" stroke-width="2"/>' + marcas + '</svg>';
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Curva de ' + n + ' valores" preserveAspectRatio="xMidYMid meet"><polyline points="' + linha + '" fill="none" stroke="currentColor" stroke-width="2"/>' + marcas + '</svg>';
   }
   var labs = {
     adicionar: function (d) {
