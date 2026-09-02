@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Clinicar</title>
+<meta name="description" content="Clinicar — agenda, pacientes, atendimento e financeiro da sua clínica, no seu próprio site.">
+<meta name="theme-color" content="#2B5CE6">
+<meta name="color-scheme" content="light">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icone-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icone-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<!-- Honeypot anti-autofill: o navegador preenche estes campos e deixa a busca em paz -->
+<input type="text" name="username" autocomplete="username" tabindex="-1" aria-hidden="true" class="honeypot">
+<input type="password" name="password" autocomplete="current-password" tabindex="-1" aria-hidden="true" class="honeypot">
+
+<div id="app">
+  <header id="topo">
+    <a class="marca" href="#/agenda" aria-label="Clinicar — início">
+      <span class="marca-icone" aria-hidden="true"><i class="ti ti-calendar-heart"></i></span>
+      <span class="marca-nome">Clinicar</span>
+    </a>
+    <div class="topo-espaco"></div>
+    <button id="topo-sync" class="topo-pill" type="button" title="Estado do salvamento">
+      <i class="ti ti-device-desktop" aria-hidden="true"></i><span>Modo local</span>
+    </button>
+    <button id="topo-priv" class="btn btn-icone btn-fantasma" type="button" aria-pressed="false" aria-label="Modo privacidade" title="Modo privacidade">
+      <i class="ti ti-eye" aria-hidden="true"></i>
+    </button>
+    <button id="topo-usuario" class="topo-usuario" type="button" aria-haspopup="menu" title="Usuário e perfil">
+      <span class="avatar" id="topo-avatar" aria-hidden="true">--</span>
+      <span class="topo-usuario-texto"><strong id="topo-nome">Usuário</strong><small id="topo-perfil">perfil</small></span>
+      <i class="ti ti-chevron-down" aria-hidden="true"></i>
+    </button>
+  </header>
+
+  <nav id="nav" aria-label="Principal">
+    <a href="#/agenda" data-vista="agenda"><i class="ti ti-calendar" aria-hidden="true"></i><span>Agenda</span></a>
+    <a href="#/pacientes" data-vista="pacientes"><i class="ti ti-users" aria-hidden="true"></i><span>Pacientes</span></a>
+    <a href="#/painel" data-vista="painel"><i class="ti ti-layout-dashboard" aria-hidden="true"></i><span>Painel</span></a>
+    <a href="#/financeiro" data-vista="financeiro"><i class="ti ti-cash" aria-hidden="true"></i><span>Financeiro</span></a>
+    <a href="#/config" data-vista="config"><i class="ti ti-settings" aria-hidden="true"></i><span>Ajustes</span></a>
+  </nav>
+
+  <main id="vista" tabindex="-1"></main>
+</div>
+
+<div id="faixa-priv" class="faixa-priv" hidden><i class="ti ti-eye-off" aria-hidden="true"></i> Modo privacidade ativo — nomes aparecem como iniciais</div>
+<div id="drawer-raiz"></div>
+<div id="modal-raiz"></div>
+<div id="toast-raiz" aria-live="polite"></div>
+<iframe id="print-raiz" title="Impressão" hidden></iframe>
+<div id="login-raiz"></div>
+
+<script src="config.js" defer></script>
+<script src="core.js" defer></script>
+<script src="backend.js" defer></script>
+<script src="login.js" defer></script>
+<script src="pacientes.js" defer></script>
+<script src="agenda.js" defer></script>
+<script src="atendimento.js" defer></script>
+<script src="financeiro.js" defer></script>
+<script src="painel.js" defer></script>
+<script src="configuracoes.js" defer></script>
+<script src="importar.js" defer></script>
+<script>document.addEventListener('DOMContentLoaded', function () { CL.boot(); });</script>
+</body>
+</html>

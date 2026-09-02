@@ -1,0 +1,10 @@
+{
+  "name": "clinicar-functions",
+  "description": "Clinicar — funções de IA (Gemini via Vertex AI, sem chave de API)",
+  "engines": { "node": "20" },
+  "main": "index.js",
+  "private": true,
+  "dependencies": {
+    "firebase-functions": "^6.0.1"
+  }
+}

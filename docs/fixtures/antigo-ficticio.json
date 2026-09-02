@@ -1,0 +1,62 @@
+{
+  "app": "clinicar-antigo",
+  "versao": 1,
+  "exportadoEm": "2026-09-02T12:00:00.000Z",
+  "_comentario": "FIXTURE 100% FICTÍCIA para o CA-39. Nomes, CPFs e telefones inventados; nenhum dado real.",
+  "state": {
+    "patients": [
+      { "id": "pfx1", "nome": "Ana Fictícia Silva", "nasc": "1990-05-10", "sexo": "F", "cpf": "123.456.789-09", "fone": "(85) 99999-0001", "email": "ana.ficticia@exemplo.com", "endereco": "Rua Exemplo, 100", "convenio": "Particular", "alergias": "", "problemas": "HAS", "meds": "Losartana 50 mg", "obs": "", "criadoEm": "2025-03-01T10:00:00.000Z", "updatedAt": 1740823200000 },
+      { "id": "pfx2", "nome": "Bruno Teste Souza", "nasc": "1985-11-22", "sexo": "M", "cpf": "", "fone": "", "email": "", "endereco": "", "convenio": "Plano Fictício Saúde", "alergias": "Dipirona", "problemas": "", "meds": "", "obs": "Paciente de teste", "criadoEm": "2025-04-15T09:30:00.000Z", "updatedAt": 1744709400000 },
+      { "id": "pfx3", "nome": "Carla Exemplo Lima", "nasc": "", "sexo": "F", "cpf": "", "fone": "85 98888-0003", "convenio": "plano ficticio saude", "criadoEm": "2025-05-02T14:00:00.000Z", "updatedAt": 1746194400000 },
+      { "id": "pfx4", "nome": "", "criadoEm": "2025-05-03T14:00:00.000Z", "updatedAt": 1746280800000 }
+    ],
+    "appts": [
+      { "id": "afx1", "date": "2026-09-01", "time": "09:00", "dur": 30, "pacId": "pfx1", "type": "con", "status": "atendido", "obs": "", "updatedAt": 1756717200000 },
+      { "id": "afx2", "date": "2026-09-03", "time": "", "dur": "abc", "pacId": null, "pac": "Diego Solto Fictício", "fone": "85 98888-0002", "type": "ret", "status": "agendado", "obs": "veio por indicação", "updatedAt": 1756803600000 },
+      { "id": "afx3", "date": "2026-09-04", "time": "14:00", "dur": 30, "pacId": "pfx2", "type": "tel", "status": "confirmado", "teleRoom": "tabc123xyz", "updatedAt": 1756890000000 },
+      { "id": "afx4", "date": "2026-08-20", "time": "10:00", "dur": 30, "pacId": "pfx3", "type": "exa", "status": "faltou", "updatedAt": 1755680400000 },
+      { "id": "afx5", "date": "2026-08-21", "time": "11:00", "dur": 60, "pacId": "pfx2", "type": "pro", "status": "cancelado", "fone": "85 97777-0002", "updatedAt": 1755770400000 },
+      { "id": "afx6", "date": "", "time": "08:00", "pacId": "pfx1", "type": "con", "status": "agendado", "updatedAt": 1755770400000 },
+      { "id": "afx7", "date": "2026-09-05", "time": "16:00", "dur": 30, "pacId": null, "pac": "diego solto ficticio", "type": "con", "status": "agendado", "updatedAt": 1756976400000 }
+    ],
+    "records": [
+      { "id": "rfx1", "pacId": "pfx1", "date": "2026-09-01T12:30:00.000Z", "tipo": "soap", "tipoAtend": "primeira", "titulo": "Consulta inicial (fictícia)", "texto": "S: cefaleia há 3 dias (fictício).\nO: PA 130x80.\nA: cefaleia tensional.\nP: analgesia, retorno em 30 dias.", "apptId": "afx1", "updatedAt": 1756729800000 },
+      { "id": "rfx2", "pacId": "inexistente", "date": "2026-09-01T12:30:00.000Z", "tipo": "evolucao", "titulo": "Sem paciente", "texto": "deve ser descartada", "updatedAt": 1756729800000 }
+    ],
+    "prescriptions": [
+      { "id": "xfx1", "pacId": "pfx1", "date": "2026-09-01T12:40:00.000Z", "tipo": "simples", "itens": [ { "nome": "Amoxicilina 500 mg", "pos": "1 cápsula de 8/8 h por 7 dias" } ], "obs": "", "updatedAt": 1756730400000 },
+      { "id": "xfx2", "pacId": "pfx2", "date": "2026-08-10T12:40:00.000Z", "tipo": "especial", "texto": "1. Clonazepam 2 mg — 1 comprimido à noite\n2. Zolpidem 10 mg — 1 comprimido ao deitar", "obs": "uso contínuo", "updatedAt": 1754829600000 }
+    ],
+    "documentos": [
+      { "id": "dfx1", "pacId": "pfx1", "date": "2026-09-01T12:45:00.000Z", "tipo": "atestado", "subtipo": "afastamento", "dias": 2, "dataInicio": "2026-09-01", "cid": "J06.9", "texto": "Atesto para os devidos fins (fictício) que a paciente necessita de 2 dias de afastamento.", "titulo": "Atestado de afastamento", "updatedAt": 1756730700000 },
+      { "id": "dfx2", "pacId": "pfx2", "date": "2026-08-10T12:50:00.000Z", "tipo": "exames", "exames": "Hemograma\nTSH", "ind": "rotina", "texto": "• Hemograma\n• TSH", "obs": "Indicação clínica / hipótese diagnóstica: rotina", "titulo": "Solicitação de exames", "updatedAt": 1754830200000 }
+    ],
+    "labs": [
+      { "id": "lfx1", "pacId": "pfx1", "date": "2026-08-01", "nome": "Glicemia", "valor": 92, "unidade": "mg/dL", "updatedAt": 1754038800000 },
+      { "id": "lfx2", "pacId": "pfx1", "date": "2026-09-01", "nome": "Glicemia", "valor": 98, "unidade": "mg/dL", "updatedAt": 1756717200000 },
+      { "id": "lfx3", "pacId": "pfx1", "date": "2026-09-01", "nome": "TSH", "valor": "x", "unidade": "mUI/L", "updatedAt": 1756717200000 }
+    ],
+    "modelos": [
+      { "id": "mfx1", "tipo": "rx", "nome": "Modelo controle fictício", "rxTipo": "especial", "itens": [ { "nome": "Clonazepam 2 mg", "pos": "1 comprimido à noite" } ], "obs": "", "updatedAt": 1754829600000 },
+      { "id": "mfx2", "tipo": "atestado", "nome": "Afastamento 3 dias", "subtipo": "afastamento", "dias": 3, "cid": "", "texto": "Atesto que necessita de 3 dias de afastamento.", "updatedAt": 1754829600000 }
+    ],
+    "docs": [
+      { "title": "Nota antiga fictícia 1", "date": "2025-01-10T10:00:00.000Z", "out": "Texto fictício de histórico sem paciente, número 1." },
+      { "title": "Nota antiga fictícia 2", "date": "2025-02-11T10:00:00.000Z", "out": "Texto fictício de histórico sem paciente, número 2." }
+    ],
+    "cfg": {
+      "medico": "Dra. Exemplo Fictícia",
+      "crm": "12345-CE",
+      "esp": "Clínica Médica",
+      "rqe": "9999",
+      "clinica": "Clínica Modelo Fictícia",
+      "endereco": "Rua Exemplo, 100 — Cidade Fictícia",
+      "telefone": "(85) 90000-0000",
+      "logo": "",
+      "rodape": "Documento de teste — dados fictícios",
+      "agenda": { "ini": "08:00", "fim": "18:00", "slot": 30, "dias": [1, 2, 3, 4, 5] }
+    },
+    "migratedEvoluai": true,
+    "_tomb": { "removido-antigo-1": 1700000000000 }
+  }
+}
