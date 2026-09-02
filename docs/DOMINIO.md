@@ -54,3 +54,7 @@ Os IPs acima são os oficiais do GitHub Pages; confira em docs.github.com ("Mana
 ## Ao trocar de domínio depois
 Os dados do modo local ficam no navegador **por origem** (domínio). Ao mudar de endereço, exporte em
 Ajustes › Dados › **Exportar tudo** no endereço antigo e importe no novo (Ajustes › Importar).
+
+> O arquivo `docs/CNAME.exemplo` traz o formato. Só copie para a **raiz** como `CNAME`
+> quando o domínio estiver registrado e apontado — um CNAME com domínio inexistente
+> derruba o endereço `medtechbr.github.io/clinicar/`.
