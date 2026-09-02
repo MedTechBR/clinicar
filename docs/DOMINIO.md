@@ -42,7 +42,7 @@ Os IPs acima são os oficiais do GitHub Pages; confira em docs.github.com ("Mana
 
 ## 5. Firebase (só quando o backend estiver ligado)
 - Console do Firebase → **Authentication → Settings → Authorized domains** → adicione o domínio novo (e mantenha `localhost` para testes).
-- `src/config.js` não muda: `authDomain` continua o do projeto (`<projeto>.firebaseapp.com`).
+- `config.js` não muda: `authDomain` continua o do projeto (`<projeto>.firebaseapp.com`).
 
 ## 6. Prazo e como testar
 - Propagação de DNS: de minutos até 24 h (raramente 48 h).

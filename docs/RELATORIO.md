@@ -66,7 +66,7 @@ relance. A barra lateral virou tinta escura, o que separa aplicativo de site.
 ## Para ligar a nuvem — só você pode fazer
 
 1. Criar o projeto no Firebase (Auth por e-mail/senha + Firestore).
-2. Colar a config web em `src/config.js` (é pública por design).
+2. Colar a config web em `config.js` (é pública por design).
 3. `firebase deploy --only firestore:rules,functions`.
 
 Agentes não criam projeto, não mexem em regras publicadas nem em credenciais.
