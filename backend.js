@@ -204,6 +204,12 @@
     if (/permission-denied/i.test(code)) return 'sem permissão (as regras do banco não foram publicadas?)';
     if (/invalid-api-key|api-key-not-valid|app-not-authorized/i.test(code)) return 'configuração inválida em config.js';
     if (/not-found/i.test(code)) return 'função não publicada';
+    if (/wrong-password|invalid-credential|invalid-login/i.test(code)) return 'e-mail ou senha incorretos';
+    if (/user-not-found/i.test(code)) return 'não existe conta com esse e-mail';
+    if (/too-many-requests/i.test(code)) return 'muitas tentativas seguidas: espere alguns minutos';
+    if (/user-disabled/i.test(code)) return 'esta conta está desativada';
+    if (/invalid-email/i.test(code)) return 'e-mail em formato inválido';
+    if (/operation-not-allowed/i.test(code)) return 'login por e-mail e senha não está ativado no console';
     return (e && e.message) || 'erro desconhecido';
   }
   function iniciarFirebase(config) {
@@ -549,7 +555,8 @@
       get user() { return FB.auth ? FB.auth.currentUser : null; },
       entrar: function (email, senha) {
         if (status.modo !== 'firebase') return Promise.reject(new Error('modo local'));
-        return FB.mods.auth.signInWithEmailAndPassword(FB.auth, String(email || '').trim(), String(senha || '')).then(function (c) { return c.user; });
+        return FB.mods.auth.signInWithEmailAndPassword(FB.auth, String(email || '').trim(), String(senha || '')).then(function (c) { return c.user; })
+          .catch(function (e) { var t = new Error(traduzirErro(e)); t.code = e && e.code; throw t; });
       },
       sair: function () {
         if (status.modo !== 'firebase') return Promise.resolve();
@@ -572,7 +579,8 @@
       },
       redefinirSenha: function (email) {
         if (status.modo !== 'firebase') return Promise.reject(new Error('modo local'));
-        return FB.mods.auth.sendPasswordResetEmail(FB.auth, String(email || '').trim());
+        return FB.mods.auth.sendPasswordResetEmail(FB.auth, String(email || '').trim())
+          .catch(function (e) { var t = new Error(traduzirErro(e)); t.code = e && e.code; throw t; });
       },
       traduzirErro: traduzirErro
     },
