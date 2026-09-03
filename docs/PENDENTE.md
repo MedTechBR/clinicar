@@ -37,3 +37,14 @@ Lista viva. Nada daqui aparece como botão morto ou promessa na interface. Fonte
 28. **Textos importados sem paciente** (histórico `docs[]` do sistema anterior) ficam em Ajustes › Dados: podem ser lidos, copiados e vinculados a um paciente, mas não editados nem apagados.
 29. **Domínio próprio** depende do registro pelo dono (`docs/DOMINIO.md`); o `CNAME` está com um endereço de exemplo.
 30. **Firebase Auth multiusuário:** o login por e-mail/senha é uma conta por clínica; os perfis (recepção/profissional/administrador) continuam locais mesmo no modo firebase.
+
+## Estado da nuvem (02/09/2026)
+
+Projeto `clinicar-608e3`, Firestore em `southamerica-east1` (São Paulo).
+Regras publicadas e verificadas por comportamento: leitura e escrita sem autenticação
+devolvem 403, e o login anônimo está desativado.
+
+**As funções de IA NÃO estão publicadas** — exigem o plano Blaze, que o projeto ainda não tem.
+Enquanto isso, gravar consulta, estruturar evolução e resumo do paciente mostram
+"configure o backend". Tudo o mais (agenda, prontuário, financeiro, sincronização) funciona.
+Para ligar: ativar o Blaze com alerta de orçamento e rodar `deploy-clinicar.command`.
