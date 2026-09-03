@@ -1,7 +1,9 @@
 {
   "name": "clinicar-functions",
   "description": "Clinicar — funções de IA (Gemini via Vertex AI, sem chave de API)",
-  "engines": { "node": "20" },
+  "engines": {
+    "node": "22"
+  },
   "main": "index.js",
   "private": true,
   "dependencies": {
