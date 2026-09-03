@@ -49,7 +49,19 @@ No Finder, duplo clique em **`deploy-clinicar.command`**, na pasta do projeto.
 Na primeira vez ele pergunta qual projeto usar — escolha o **Clinicar**. Ele recusa publicar em
 projeto de outro aplicativo, então não dá para errar de alvo.
 
-## 6. Colar a configuração no app
+## 6. Colar a configuração no app — **duplo clique**
+
+Console → engrenagem → **Configurações do projeto** → role até **Seus apps** → **Web (`</>`)** →
+registre um app chamado `Clinicar` → **copie o bloco `firebaseConfig` inteiro**.
+
+Duplo clique em **`configurar.command`**, cole o bloco, Enter e **Ctrl-D**. Ele escreve o
+`config.js` e o `.firebaserc` sozinho, guarda uma cópia do arquivo anterior e recusa se você
+colar o projeto de outro aplicativo ou uma colagem pela metade.
+
+Depois: `git add -A && git commit -m "liga a nuvem" && git push`.
+
+<details><summary>Se preferir editar à mão</summary>
+
 
 Console → engrenagem → **Configurações do projeto** → role até **Seus apps** → **Web (`</>`)** →
 registre um app chamado `Clinicar` → copie o objeto `firebaseConfig`.
@@ -67,6 +79,8 @@ window.CLINICAR_CONFIG = {
   regiaoFunctions: 'southamerica-east1'
 };
 ```
+
+</details>
 
 Essa configuração é **pública por design** — quem protege os dados são as regras do passo 5, não
 o segredo dessas chaves. Pode ficar no repositório sem problema.
