@@ -100,7 +100,8 @@ table { border-collapse:collapse; }
 #vista { grid-area:vista; overflow:auto; -webkit-overflow-scrolling:touch; position:relative; min-width:0; }
 .tela { padding:var(--e-4) var(--e-5) var(--e-6); min-width:0; }
 .tela-cabeca { display:flex; align-items:center; gap:var(--e-3); flex-wrap:wrap; margin-bottom:var(--e-4); }
-.tela-cabeca h1 { flex:1; min-width:0; }
+.tela-cabeca h1 { flex:1 1 auto; min-width:fit-content; }  /* min-width:0 deixava o texto transbordar da caixa e invadir o contador em 360px;
+     como .tela-cabeca tem flex-wrap:wrap, o contador quebra para a linha de baixo. */
 .faixa-priv {
   position:fixed; left:50%; bottom:calc(var(--e-3) + env(safe-area-inset-bottom)); transform:translateX(-50%);
   background:var(--tinta); color:#fff; font-size:var(--t-13); font-weight:500; padding:6px 12px; border-radius:999px;
@@ -377,6 +378,14 @@ body.has-drawer-lg #toast-raiz { right:calc(min(560px, 100vw) + var(--e-4)); }
   .ag-grade { grid-template-columns:56px repeat(var(--ag-cols, 1), minmax(220px, 1fr)); }
 }
 @media (max-width:767px) {
+  /* O "Desfazer" do toast é o único caminho para reverter um arrastar-remarcar,
+     e ele some sozinho: errar um alvo de 32px no celular custa a remarcação. */
+  .toast-acao { min-height:44px; padding:6px 12px; }
+  .toast-x { width:44px; height:44px; }
+  /* o nome do paciente é um link dentro da linha; a linha toda já é clicável,
+     mas quem mira o nome merece o mesmo alvo */
+  .pac-nome { display:inline-flex; align-items:center; min-height:44px; }
+
   :root { --alvo:44px; --hora-px:72px; }
   #app { grid-template-columns:1fr; grid-template-rows:var(--topo-h) 1fr; grid-template-areas:"topo" "vista"; }
   #topo { padding:0 var(--e-2) 0 var(--e-3); }

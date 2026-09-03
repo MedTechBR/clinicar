@@ -3,7 +3,7 @@
    Funções de IA (Gemini via Vertex AI) SEM chave de API: a função se autentica
    com a própria conta de serviço do projeto (token do metadata server).
    Só usuários autenticados (Firebase Auth) chamam; o app chama por httpsCallable
-   ('gemini' e 'geminiAudio', região southamerica-east1) — ver src/backend.js.
+   ('gemini' e 'geminiAudio', região southamerica-east1) — ver backend.js.
 
    Como publicar (4 passos, feitos pelo dono do projeto):
    1. No console do Google Cloud do MESMO projeto Firebase, habilite a "Vertex AI API"
@@ -12,7 +12,7 @@
       `firebase deploy --only functions,firestore:rules` (usa firebase.json + firestore.rules).
       Se o deploy criar a função sem permissão de invocação, apague-a e publique de novo
       (as callables abaixo já pedem invoker público; a autenticação é feita no código).
-   3. Cole a configuração web do projeto em src/config.js (apiKey, projectId, appId…).
+   3. Cole a configuração web do projeto em config.js (apiKey, projectId, appId…).
    4. Abra o Clinicar, entre com e-mail/senha criados no console (Authentication) e teste
       "Estruturar com IA" numa evolução fictícia. Sem função publicada, o app mostra
       "Configure o backend" e continua funcionando sem IA.

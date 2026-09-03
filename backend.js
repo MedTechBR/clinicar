@@ -1,7 +1,7 @@
 /* Clinicar — backend.js
    Interface ÚNICA de persistência, autenticação e IA, com dois adaptadores escolhidos em init():
      local    (padrão)  → localStorage com blindagem (backup rotativo, trava do 1º save, chave ruim preservada, cota)
-     firebase           → só quando src/config.js tem apiKey + projectId E o SDK carregou; um documento por item,
+     firebase           → só quando config.js tem apiKey + projectId E o SDK carregou; um documento por item,
                           transação por item (nunca grava o estado inteiro, nunca cai para gravação crua), merge
                           item a item com lápides (updatedAt vence; empate fica com o local).
    Depende só de CL.util / CL.ui.toast / CL.emit. Contrato: docs/ESPEC.md §4.5. */
