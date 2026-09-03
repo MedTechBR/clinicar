@@ -319,6 +319,24 @@
       default: return false;
     }
   };
+
+  /* O menu é HTML fixo, então mostrava "Financeiro" e "Ajustes" para todo mundo:
+     a guarda de rota barrava o clique, mas o usuário via portas que não abrem.
+     Aqui o menu passa a refletir o perfil de quem está na sessão. */
+  var GUARDA_DO_MENU = { agenda:'agenda', pacientes:'clinico', painel:'agenda', financeiro:'financeiro', config:'config' };
+  function ajustarMenu() {
+    var nav = document.getElementById('nav');
+    if (!nav) return;
+    nav.querySelectorAll('[data-vista]').forEach(function (a) {
+      var g = GUARDA_DO_MENU[a.getAttribute('data-vista')];
+      var pode = !g || CL.can(g);
+      a.hidden = !pode;
+      if (!pode) a.setAttribute('tabindex', '-1'); else a.removeAttribute('tabindex');
+    });
+  }
+  CL.ajustarMenu = ajustarMenu;
+  CL.on('session', ajustarMenu);
+
   CL.audit = function (acao, alvo, alvoId, extra) {
     var s = sessao;
     var item = Object.assign({

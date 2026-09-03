@@ -54,6 +54,13 @@
   function cfg() { return CL.state.cfg || {}; }
   function cfgAgenda() { return cfg().agenda || {}; }
   function politica() { return cfg().politica || {}; }
+  /* A escolha de colunas é PESSOAL. Sem escopo por usuário, quem entrasse depois
+     herdava a seleção do anterior — e um profissional acabava vendo a fila dos
+     outros em vez da própria. */
+  function chaveProfs() {
+    var s = CL.session;
+    return 'agenda.profs' + (s && s.usuarioId ? '.' + s.usuarioId : '');
+  }
   function profsAtivos() { return CL.col('profissionais').filter(function (p) { return p && p.ativo !== false; }); }
   function procsAtivos() { return CL.col('procedimentos').filter(function (p) { return p && p.ativo !== false; }); }
   function convsAtivos() { return CL.col('convenios').filter(function (c) { return c && c.ativo !== false; }); }
@@ -772,7 +779,7 @@
     else if (sel.indexOf(id) >= 0) { if (sel.length > 1) sel = sel.filter(function (x) { return x !== id; }); }
     else sel = sel.concat([id]);
     st.profs = sel;
-    CL.pref.set('agenda.profs', sel);
+    CL.pref.set(chaveProfs(), sel);
     irPara(st.visao, st.data, sel, true);
   }
   function deslocar(n) {
@@ -1955,7 +1962,7 @@
       var sel = st.profs.filter(function (id) { return prof(id); });
       if (st.visao === 'semana' || maxCols() === 1) sel = [p.id]; else sel = sel.concat([p.id]);
       st.profs = sel;
-      CL.pref.set('agenda.profs', sel);
+      CL.pref.set(chaveProfs(), sel);
       if (el) irPara(st.visao === 'espera' || st.visao === 'lembretes' ? st.visao : st.visao, st.data, sel, true);
       return true;
     }
@@ -2209,7 +2216,7 @@
         var i = ids.indexOf(sel[0]);
         var j = (i + (a === 'prof-proximo' ? 1 : -1) + ids.length) % ids.length;
         st.profs = [ids[j]];
-        CL.pref.set('agenda.profs', st.profs);
+        CL.pref.set(chaveProfs(), st.profs);
         irPara(st.visao, st.data, st.profs, true);
         break;
       }
@@ -2304,7 +2311,7 @@
     params = params || {};
     var seg = params.seg || [], q = params.q || {};
     var v = seg[0];
-    if (!v) { irPara(CL.pref.get('agenda.visao', padraoVisao()), hoje(), CL.pref.get('agenda.profs', null), true); return; }
+    if (!v) { irPara(CL.pref.get('agenda.visao', padraoVisao()), hoje(), CL.pref.get(chaveProfs(), null), true); return; }
     if (VISOES.indexOf(v) < 0 && v !== 'espera' && v !== 'lembretes') { irPara('dia', hoje(), null, true); return; }
     st.visao = v;
     st.ver24 = !!CL.pref.get('agenda.ver24', false);
@@ -2314,7 +2321,7 @@
     else if (v === 'espera') st.data = hoje();
     else st.data = (/^\d{4}-\d{2}-\d{2}$/.test(seg[1] || '') && U.dataDe(seg[1])) ? seg[1] : (v === 'lembretes' ? U.addDias(hoje(), 1) : hoje());
     var ativos = profsAtivos().map(function (p) { return p.id; });
-    var profs = q.prof ? String(q.prof).split(',') : (CL.pref.get('agenda.profs', null) || []);
+    var profs = q.prof ? String(q.prof).split(',') : (CL.pref.get(chaveProfs(), null) || []);
     st.profs = (Array.isArray(profs) ? profs : []).filter(function (id) { return ativos.indexOf(id) >= 0; });
     if (VISOES.indexOf(v) >= 0) CL.pref.set('agenda.visao', v);
     ligar();
