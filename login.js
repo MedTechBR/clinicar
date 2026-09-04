@@ -95,8 +95,9 @@
   }
   function mensagemAuth(err) {
     var code = (err && err.code) || '';
-    if (/wrong-password|invalid-credential|invalid-login-credentials/i.test(code)) return 'Senha incorreta. Tente de novo ou use "Esqueci a senha".';
-    if (/user-not-found/i.test(code)) return 'Este e-mail não está cadastrado. O administrador cria as contas no console do servidor.';
+    /* O servidor responde o mesmo código para senha errada e para conta inexistente
+       (proteção contra descobrir quais e-mails existem). A mensagem cobre os dois casos. */
+    if (/wrong-password|invalid-credential|invalid-login-credentials|user-not-found/i.test(code)) return 'E-mail ou senha não conferem — e a resposta é a mesma quando a conta ainda não foi criada. Confira o e-mail, use "Esqueci a senha" ou peça ao administrador para criar a conta da clínica.';
     if (/invalid-email/i.test(code)) return 'E-mail inválido.';
     if (/too-many-requests/i.test(code)) return 'Muitas tentativas. Aguarde alguns minutos.';
     if (/network-request-failed/i.test(code)) return 'Sem rede. Verifique a conexão e tente de novo.';
