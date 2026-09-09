@@ -437,6 +437,7 @@
     return 0;
   }
   function lancarTaxa(c) {
+    if (Backend.modo === 'firebase') return null;
     var valor = taxaFaltaCent(c);
     if (!valor) return null;
     var ja = CL.col('lancamentos').filter(function (l) { return l && l.consultaId === c.id && l.descricao === 'Taxa de falta' && l.status !== 'cancelado'; })[0];
@@ -464,6 +465,7 @@
     return l;
   }
   function efeitosFinalizar(c) {
+    if (Backend.modo === 'firebase') return;
     var pr = proc(c.procId);
     if (!pr || !(pr.valorCent > 0)) return;
     var l = lancarDaConsulta(c);
@@ -482,6 +484,7 @@
     var c = CL.get('consultas', id);
     if (!c) return Promise.resolve({ ok: false, status: null, motivo: 'Consulta não encontrada' });
     var de = c.status;
+    if (['em_atendimento', 'finalizado'].indexOf(novo) >= 0 && !CL.can('clinico')) return Promise.resolve({ ok: false, motivo: 'Somente o profissional pode iniciar ou finalizar o atendimento.' });
     if (de === novo) return Promise.resolve({ ok: true, status: de });
     if (!CL.STATUS[novo]) return Promise.resolve({ ok: false, status: de, motivo: 'Status desconhecido' });
     var iDe = CL.FLUXO.indexOf(de), iNovo = CL.FLUXO.indexOf(novo);
@@ -506,7 +509,7 @@
     c.status = novo;
     if (novo === 'confirmado') c.confirmadoEm = agora;
     else if (novo === 'chegou') c.chegouEm = agora;
-    else if (novo === 'em_atendimento') { c.inicioEm = c.inicioEm && de === 'finalizado' ? c.inicioEm : agora; c.fimEm = null; }
+    else if (novo === 'em_atendimento') { c.chegouEm = c.chegouEm || agora; c.inicioEm = c.inicioEm && de === 'finalizado' ? c.inicioEm : agora; c.fimEm = null; }
     else if (novo === 'finalizado') c.fimEm = agora;
     else if (novo === 'agendado') { c.confirmadoEm = null; c.chegouEm = null; c.inicioEm = null; c.fimEm = null; c.cancelamento = null; }
     if (CANCELADOS[novo]) c.cancelamento = { em: agora, motivo: String(opts.motivo || ''), porQuem: opts.porQuem || (novo === 'cancelado_clinica' ? 'clinica' : 'paciente') };
@@ -1331,6 +1334,8 @@
     var rodape = document.createElement('div');
     rodape.className = 'ag-form-rodape';
     rodape.innerHTML = '<span class="ag-politica">' + e(textoPolitica()) + '</span><button type="button" class="btn btn-neutro" data-acao="cancelar">Cancelar</button><button type="button" class="btn btn-primario" data-acao="salvar"><i class="ti ti-check" aria-hidden="true"></i>Salvar</button>';
+    if (!c) rodape.innerHTML += '<button type="button" class="btn btn-primario" data-acao="salvar-chegou">Salvar e colocar na espera</button>' + (CL.can('clinico') ? '<button type="button" class="btn btn-primario" data-acao="salvar-atender">Salvar e atender</button>' : '');
+    var destinoAposSalvar = null;
     var ctx = CL.ui.drawer({ titulo: c ? 'Editar consulta' : 'Nova consulta', corpo: corpo, rodape: rodape, aoFechar: function () { limparPreview(); if (formAberto && formAberto.ctx === ctx) formAberto = null; } });
     function g(n) { return corpo.querySelector('[name="' + n + '"]'); }
     function ler() {
@@ -1366,6 +1371,7 @@
     function tudo() { atualizarEncaixe(); atualizarAvisos(); atualizarPreview(); }
     function submeter(ignorar) {
       var d = ler();
+      if (destinoAposSalvar && d.data !== hoje()) { CL.ui.toast('Para colocar na espera ou atender agora, escolha a data de hoje.', { kind: 'aviso' }); return; }
       var r = salvar(d, { ignorarAvisos: !!ignorar });
       if (!r.ok) {
         var box = corpo.querySelector('[data-avisos]'), html = '';
@@ -1396,13 +1402,16 @@
         if (modoVaga && (!f.esperaId || modoVaga.esperaId === f.esperaId)) { modoVaga = null; agendarRender(); }
         if (el && (st.visao === 'dia' || st.visao === 'lista' || st.visao === 'semana') && consulta.data !== st.data) irPara(st.visao, consulta.data, st.profs);
       } else CL.ui.toast('Consulta atualizada', { kind: 'ok' });
+      if (destinoAposSalvar === 'chegou') avancar(consulta.id, 'chegou').then(function (r) { if (r.ok) CL.route.go('#/painel'); });
+      if (destinoAposSalvar === 'em_atendimento') avancar(consulta.id, 'em_atendimento');
     }
     ctx.el.addEventListener('click', function (ev) {
       var b = ev.target.closest('[data-acao]');
       if (!b) return;
       var a = b.getAttribute('data-acao');
       if (a === 'cancelar') ctx.fechar({ motivo: 'cancelar' });
-      else if (a === 'salvar') submeter(false);
+      else if (a === 'salvar') { destinoAposSalvar = null; submeter(false); }
+      else if (a === 'salvar-chegou' || a === 'salvar-atender') { destinoAposSalvar = a === 'salvar-chegou' ? 'chegou' : 'em_atendimento'; submeter(false); }
       else if (a === 'salvar-assim') submeter(true);
       else if (a === 'encaixar') { g('encaixe').checked = true; g('encaixeMotivo').hidden = false; atualizarAvisos(); atualizarPreview(); g('encaixeMotivo').focus(); }
     });
@@ -1487,9 +1496,13 @@
   }
   function verRodapeHtml(c) {
     var prox = CL.proximoStatus(c.status), html = '<button type="button" class="btn btn-icone btn-neutro" data-acao="menu" data-id="' + e(c.id) + '" aria-label="Mais ações" aria-haspopup="menu"><i class="ti ti-dots" aria-hidden="true"></i></button>';
-    if (prox) {
-      var dis = prox === 'em_atendimento' && !CL.can('clinico');
-      html += '<button type="button" class="btn btn-primario ag-cresce" data-acao="avancar" data-id="' + e(c.id) + '" data-para="' + prox + '"' + (dis ? ' disabled title="Seu perfil não abre o prontuário — o profissional inicia o atendimento"' : '') + '><i class="ti ' + CL.STATUS[prox].icone + '" aria-hidden="true"></i>' + ROTULO_AVANCO[prox] + '</button>';
+    if (c.status === 'agendado' || c.status === 'confirmado') {
+      html += '<button type="button" class="btn btn-primario" data-acao="avancar" data-id="' + e(c.id) + '" data-para="chegou">Paciente chegou</button>';
+    }
+    if (CL.can('clinico') && ['agendado', 'confirmado', 'chegou', 'em_atendimento'].indexOf(c.status) >= 0) {
+      html += '<button type="button" class="btn btn-primario" data-acao="avancar" data-id="' + e(c.id) + '" data-para="em_atendimento">' + (c.status === 'em_atendimento' ? 'Abrir atendimento' : 'Iniciar atendimento') + '</button>';
+    } else if (c.status === 'chegou') {
+      html += '<span class="texto-2">Na sala de espera · aguardando o profissional</span>';
     }
     return html;
   }
@@ -1500,7 +1513,7 @@
     if (!para) return Promise.resolve({ ok: false });
     if (para === 'em_atendimento') {
       if (!CL.can('clinico')) { CL.ui.toast('Seu perfil não abre o prontuário', { kind: 'aviso' }); return Promise.resolve({ ok: false }); }
-      if (window.Atendimento && typeof Atendimento.iniciar === 'function') return Promise.resolve(Atendimento.iniciar(id)).then(function () { return { ok: true, status: 'em_atendimento' }; });
+      if (window.Atendimento && typeof Atendimento.iniciar === 'function') return Promise.resolve(Atendimento.iniciar(id));
     }
     return mudarStatus(id, para).then(function (r) {
       if (r.ok) CL.ui.toast(CL.STATUS[r.status].rotulo, { kind: 'ok', ms: 2500 });

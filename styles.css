@@ -696,7 +696,7 @@ body.is-arrastando-agenda { cursor:grabbing; }
 .ag-form .campos-2, .ag-novo-pac .campos-2 { display:grid; grid-template-columns:1fr 1fr; gap:var(--e-3); }
 .ag-campo-botao { justify-content:flex-end; }
 .ag-form-rodape { display:flex; align-items:center; gap:var(--e-2); width:100%; flex-wrap:wrap; }
-.ag-ver-rodape { display:flex; align-items:center; gap:var(--e-2); width:100%; }
+.ag-ver-rodape { display:flex; align-items:center; gap:var(--e-2); width:100%; flex-wrap:wrap; }
 .ag-politica { flex:1; min-width:120px; font-size:var(--t-12); color:var(--tinta-3); }
 .ag-valor { font-size:var(--t-13); color:var(--tinta-2); font-feature-settings:'tnum' 1; }
 .ag-pac-sel { display:flex; align-items:center; gap:var(--e-2); padding:var(--e-2) var(--e-3); border:1px solid var(--linha-forte); border-radius:var(--raio-1); background:var(--painel); min-height:44px; }

@@ -7,7 +7,7 @@
   'use strict';
 
   var CL = window.CL = {};
-  CL.VERSAO = '1.0.0';
+  CL.VERSAO = '1.1.0';
   CL.COLECOES = ['profissionais', 'procedimentos', 'convenios', 'pacientes', 'consultas', 'bloqueios', 'espera',
     'notasDia', 'evolucoes', 'receitas', 'documentos', 'exames', 'modelos', 'lancamentos', 'usuarios', 'auditoria'];
   CL.AUDITORIA_TETO = 5000;
@@ -237,6 +237,7 @@
   };
 
   CL.seed = function () {
+    if (window.Backend && Backend.modo === 'firebase' && (!Backend.auth.acesso || Backend.auth.acesso.perfil !== 'admin')) return Promise.resolve();
     if (CL.state.cfg && CL.state.cfg.seed) return Promise.resolve();
     return CL.lote(function () {
       var procs = [
@@ -250,9 +251,8 @@
         if (!CL.get('procedimentos', p[0])) CL.upsert('procedimentos', { id: p[0], nome: p[1], dur: p[2], valorCent: 0, cor: p[3], modalidade: p[4], bufferMin: 0, ativo: true });
       });
       if (!CL.get('convenios', 'particular')) CL.upsert('convenios', { id: 'particular', nome: 'Particular', ativo: true });
-      if (!CL.col('usuarios').length) {
+      if (Backend.modo !== 'firebase' && !CL.col('usuarios').length) {
         CL.upsert('usuarios', { id: 'usr-admin', nome: 'Administração', perfil: 'admin', profId: null, pinHash: '', ativo: true });
-        CL.upsert('usuarios', { id: 'usr-recepcao', nome: 'Recepção', perfil: 'recepcao', profId: null, pinHash: '', ativo: true });
       }
       var m = (CL.state.cfg.whatsapp && CL.state.cfg.whatsapp.modelos) || {};
       var padrao = {
@@ -274,13 +274,17 @@
     set: function (u) { return CL.sessao.set(u); },
     clear: function () { return CL.sessao.clear(); }
   };
-  var PERFIS = { admin: 'Administrador', recepcao: 'Recepção', profissional: 'Profissional' };
+  var PERFIS = { admin: 'Administrador geral', recepcao: 'Recepção', profissional: 'Profissional' };
   CL.PERFIS = PERFIS;
   Object.defineProperty(CL, 'session', { get: function () { return sessao; }, set: function (v) { sessao = v; } });
   CL.sessao = {
     get: function () { return sessao; },
     set: function (u) {
       if (!u || !u.id) throw new Error('sessão: usuário inválido');
+      if (window.Backend && Backend.modo === 'firebase') {
+        if (!Backend.auth.acesso || Backend.auth.acesso.ativo !== true) throw new Error('Acesso não autorizado');
+        u = Backend.auth.acesso;
+      }
       sessao = Object.create(protoSessao);
       sessao.usuarioId = String(u.id);
       sessao.nome = u.nome || '';
@@ -299,6 +303,7 @@
     },
     /* Reabre a sessão guardada (F5). Devolve true se conseguiu. */
     restaurar: function () {
+      if (window.Backend && Backend.modo === 'firebase') return false;
       var guardada = null;
       try { guardada = JSON.parse(localStorage.getItem('clinicar.v1.sessao')); } catch (e) { guardada = null; }
       if (!guardada || !guardada.usuarioId) return false;
@@ -323,7 +328,7 @@
   /* O menu é HTML fixo, então mostrava "Financeiro" e "Ajustes" para todo mundo:
      a guarda de rota barrava o clique, mas o usuário via portas que não abrem.
      Aqui o menu passa a refletir o perfil de quem está na sessão. */
-  var GUARDA_DO_MENU = { agenda:'agenda', pacientes:'clinico', painel:'agenda', financeiro:'financeiro', config:'config' };
+  var GUARDA_DO_MENU = { agenda:'agenda', pacientes:'agenda', painel:'agenda', financeiro:'financeiro', config:'config' };
   function ajustarMenu() {
     var nav = document.getElementById('nav');
     if (!nav) return;
@@ -1015,7 +1020,7 @@
 
   /* =================== roteador =================== */
   var rotas = {}, atual = null, montado = null, pendenteDestino = null, navegacoes = 0, iniciado = false;
-  var GUARDAS = { atendimento: 'clinico', config: 'config' };
+  var GUARDAS = { atendimento: 'clinico', config: 'config', financeiro: 'financeiro' };
   var MSG_GUARDA = { clinico: 'Seu perfil não abre o prontuário', config: 'Só o administrador abre os ajustes' };
 
   function salvarScroll(vista) {
@@ -1055,12 +1060,12 @@
       if (atual) salvarScroll(atual.vista);
       desmontar(); atual = null;
       if (window.Login && typeof Login.gate === 'function') {
-        Login.gate().then(function () { CL.route.go(pendenteDestino || '#/agenda', { replace: true }); });
+        Login.gate().then(function () { CL.route.go(pendenteDestino || '#/painel', { replace: true }); });
       }
       return;
     }
     if (!r.vista || r.vista === 'login') {
-      var dest = pendenteDestino || '#/agenda'; pendenteDestino = null;
+      var dest = pendenteDestino || '#/painel'; pendenteDestino = null;
       CL.route.go(dest, { replace: true });
       return;
     }
@@ -1285,7 +1290,7 @@
     var bu = raiz('topo-usuario');
     if (bu) bu.addEventListener('click', function () {
       CL.ui.menu(bu, [
-        { rotulo: 'Trocar usuário', icone: 'ti-switch-horizontal', fn: function () { if (window.Login) Login.trocarUsuario(); } },
+        { rotulo: 'Trocar conta', icone: 'ti-switch-horizontal', fn: function () { if (window.Login) Login.trocarUsuario(); } },
         { rotulo: (sessao && sessao.privacidade) ? 'Desligar modo privacidade' : 'Modo privacidade', icone: 'ti-eye-off', fn: function () { CL.privacidade(); } },
         { rotulo: 'Estado dos dados', icone: 'ti-database', fn: abrirStatus },
         '-',

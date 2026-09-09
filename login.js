@@ -1,6 +1,5 @@
 /* Clinicar — login.js
-   Tela de login PRÓPRIA no visual do produto. Modo local: faixa "Modo local" + lista de usuários (PIN opcional).
-   Modo firebase: e-mail + senha e depois a mesma lista de usuários/perfis. Contrato: docs/ESPEC.md §4.6. */
+   Conta individual com função atribuída no servidor. O modo local funciona neste dispositivo. */
 (function () {
   'use strict';
 
@@ -16,7 +15,8 @@
   function precisaEmail() { return Backend.modo === 'firebase' && !Backend.auth.user; }
 
   function render() {
-    if (!elRaiz) return;
+    if (!elRaiz || (elRaiz.hidden && CL.session)) return;
+    if (Backend.modo === 'firebase' && Backend.auth.acesso && Backend.acessoPronto) { entrar(Backend.auth.acesso); return; }
     var e = CL.util.esc;
     var local = Backend.modo !== 'firebase';
     var html = '<div class="login"><div class="login-cartao">' +
@@ -25,7 +25,9 @@
     if (local) {
       html += '<div class="login-faixa" role="note"><i class="ti ti-device-desktop" aria-hidden="true"></i><span><strong>Modo local</strong> — os dados ficam neste navegador. Faça backups em Configurações › Dados.</span></div>';
     }
-    if (precisaEmail()) {
+    if (Backend.modo === 'firebase' && Backend.auth.user) {
+      html += '<h2>Acesso à clínica</h2><p role="status">' + e(Backend.erroAcesso || 'Carregando seu acesso…') + '</p><button class="btn btn-neutro" data-acao="sair-conta">Sair da conta</button>';
+    } else if (precisaEmail()) {
       html += '<form class="login-form" data-form="email" novalidate>' +
         '<div class="campo"><label for="login-email">E-mail</label><input id="login-email" name="email" type="email" autocomplete="email" required inputmode="email"></div>' +
         '<div class="campo"><label for="login-senha">Senha</label><input id="login-senha" name="senha" type="password" autocomplete="current-password" required></div>' +
@@ -60,7 +62,7 @@
   function entrar(u) {
     CL.sessao.set(u);
     CL.audit('login', 'usuarios', u.id);
-    if (!CL.pref.get('login.dicaPin', false) && !u.pinHash) {
+    if (Backend.modo !== 'firebase' && !CL.pref.get('login.dicaPin', false) && !u.pinHash) {
       CL.pref.set('login.dicaPin', true);
       CL.ui.toast('Dica: defina um PIN por usuário em Ajustes › Usuários.', { kind: 'info', ms: 6000 });
     }
@@ -97,7 +99,7 @@
     var code = (err && err.code) || '';
     /* O servidor responde o mesmo código para senha errada e para conta inexistente
        (proteção contra descobrir quais e-mails existem). A mensagem cobre os dois casos. */
-    if (/wrong-password|invalid-credential|invalid-login-credentials|user-not-found/i.test(code)) return 'E-mail ou senha não conferem — e a resposta é a mesma quando a conta ainda não foi criada. Confira o e-mail, use "Esqueci a senha" ou peça ao administrador para criar a conta da clínica.';
+    if (/wrong-password|invalid-credential|invalid-login-credentials|user-not-found/i.test(code)) return 'E-mail ou senha não conferem. Use “Esqueci a senha” ou peça ao administrador para liberar seu acesso.';
     if (/invalid-email/i.test(code)) return 'E-mail inválido.';
     if (/too-many-requests/i.test(code)) return 'Muitas tentativas. Aguarde alguns minutos.';
     if (/network-request-failed/i.test(code)) return 'Sem rede. Verifique a conexão e tente de novo.';
@@ -136,7 +138,7 @@
       var restaurada = !precisaEmail() && CL.sessao.restaurar();
       if (restaurada) { concluir(); return Promise.resolve(); }
       Login.mount(document.getElementById('login-raiz'));
-      return promessaGate;
+      return promessaGate || Promise.resolve();
     },
     mount: function (el) {
       elRaiz = el;
@@ -153,15 +155,15 @@
     sair: function () {
       try { CL.audit('logout', 'usuarios', CL.session ? CL.session.usuarioId : null); } catch (e) { /* sem sessão */ }
       var firebase = Backend.modo === 'firebase';
-      CL.sessao.clear();
       if (firebase) {
         /* Garante que nada do usuário anterior fique em memória num computador compartilhado. */
-        Backend.auth.sair().then(function () { location.replace(location.pathname + location.search + '#/login'); location.reload(); });
-        return;
+        return Backend.auth.sair().then(function () { CL.sessao.clear(); location.replace(location.pathname + location.search + '#/login'); location.reload(); }).catch(function (err) { CL.ui.toast(err.message || 'Não foi possível sair. Tente novamente.', { kind: 'erro' }); });
       }
+      CL.sessao.clear();
       CL.route.go('#/login');
     },
     trocarUsuario: function () {
+      if (Backend.modo === 'firebase') return Login.sair();
       try { CL.audit('logout', 'usuarios', CL.session ? CL.session.usuarioId : null); } catch (e) { /* sem sessão */ }
       CL.sessao.clear();
       CL.route.go('#/login');

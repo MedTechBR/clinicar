@@ -220,7 +220,7 @@
       '<div class="campos">' +
       campo('pf-rep-modo', 'Repasse', '<select id="pf-rep-modo" class="select">' + opt('nenhum', 'Sem repasse', rep.modo) + opt('pct', 'Percentual do recebido', rep.modo) + opt('fixo', 'Valor fixo por atendimento', rep.modo) + '</select>') +
       campo('pf-rep-valor', 'Valor do repasse', '<input id="pf-rep-valor" class="input tnum" type="text" inputmode="decimal" autocomplete="off" value="' + e(rep.modo === 'fixo' ? valorInput(rep.valor || 0) : String(rep.valor || 0)) + '">', 'Percentual (ex.: 70) ou valor em reais (ex.: 120,00).') +
-      campo('pf-usuario', 'Usuário vinculado', '<select id="pf-usuario" class="select">' + opt('', '— nenhum —', f.usuarioId || '') + usuarios.map(function (u) { return opt(u.id, u.nome + ' (' + CL.fmt.perfil(u.perfil) + ')', f.usuarioId || ''); }).join('') + '</select>') +
+      (Backend.modo === 'firebase' ? '<p class="ajuda">Para liberar o login deste profissional, abra Ajustes › Usuários e vincule o e-mail à agenda.</p>' : campo('pf-usuario', 'Usuário vinculado', '<select id="pf-usuario" class="select">' + opt('', '— nenhum —', f.usuarioId || '') + usuarios.map(function (u) { return opt(u.id, u.nome + ' (' + CL.fmt.perfil(u.perfil) + ')', f.usuarioId || ''); }).join('') + '</select>')) +
       '</div>' +
       '<div class="campo-linha"><input id="pf-ativo" type="checkbox"' + (f.ativo !== false ? ' checked' : '') + '><label for="pf-ativo">Ativo (aparece na agenda)</label></div>';
     var cor = f.cor;
@@ -255,7 +255,7 @@
         slot: parseInt(g('pf-slot').value, 10) || 15, maxEncaixesHora: Math.max(0, parseInt(g('pf-enc').value, 10) || 0),
         procIds: Array.prototype.map.call(corpo.querySelectorAll('[data-proc]:checked'), function (c) { return c.getAttribute('data-proc'); }),
         procPadraoId: g('pf-padrao').value || null, repasse: { modo: modo, valor: modo === 'nenhum' ? 0 : valorRep },
-        usuarioId: g('pf-usuario').value || null, ativo: g('pf-ativo').checked
+        usuarioId: g('pf-usuario') ? g('pf-usuario').value || null : f.usuarioId || null, ativo: g('pf-ativo').checked
       };
     }
     function salvar() {
@@ -436,7 +436,56 @@
   }
 
   /* =================== usuários =================== */
+  var usuariosNuvem = [];
+  function renderAcessos(el) {
+    el.innerHTML = '<p role="status">Carregando acessos…</p>';
+    Backend.auth.gerenciar({ acao: 'listar' }).then(function (r) {
+      if (!el.isConnected) return;
+      usuariosNuvem = r.usuarios || [];
+      el.innerHTML = '<div class="pilha"><div class="linha-acoes"><p class="texto-2 cfg-cresce">Cada pessoa entra com seu próprio e-mail e senha. Você define a função e pode revogar o acesso.</p><button class="btn btn-primario" data-acao="usr-novo">Liberar acesso</button></div>' +
+        '<div class="card"><ul class="lista-simples">' + usuariosNuvem.map(function (u) {
+          return '<li><span class="cfg-cresce"><strong>' + e(u.nome) + '</strong><br><span>' + e(u.email) + '</span><br><small>' + e(CL.fmt.perfil(u.perfil)) + ' · ' + (u.ativo ? 'Acesso liberado' : 'Acesso revogado') + '</small></span><button class="btn btn-neutro" data-acao="usr-editar" data-id="' + e(u.id) + '">Editar acesso</button></li>';
+        }).join('') + '</ul></div><p class="ajuda">No primeiro acesso, o colaborador usa “Esqueci a senha” na tela de entrada para definir a própria senha.</p></div>';
+    }).catch(function () { if (el.isConnected) el.innerHTML = '<p role="alert">Não foi possível carregar os acessos. Abra esta aba novamente para tentar.</p>'; });
+  }
+  function abrirAcesso(id) {
+    if (!podeConfig()) return null;
+    var u = id ? usuariosNuvem.filter(function (x) { return x.id === id; })[0] : null;
+    if (id && !u) return null;
+    var f = u || { nome: '', email: '', perfil: 'recepcao', profId: '', ativo: true };
+    var form = document.createElement('form'); form.className = 'pilha cfg-form';
+    form.innerHTML = campo('ac-nome', 'Nome', input('ac-nome', f.nome, ' required maxlength="80"')) +
+      campo('ac-email', 'E-mail de acesso', '<input class="input" id="ac-email" type="email" autocomplete="off" required value="' + e(f.email) + '"' + (u ? ' readonly' : '') + '>') +
+      campo('ac-perfil', 'Função', '<select class="select" id="ac-perfil">' + opt('recepcao', 'Recepção', f.perfil) + opt('profissional', 'Profissional de saúde', f.perfil) + opt('admin', 'Administrador', f.perfil) + '</select>') +
+      '<p class="ajuda" data-funcao></p>' +
+      campo('ac-prof', 'Profissional na agenda', '<select class="select" id="ac-prof">' + opt('', 'Selecione o profissional', f.profId || '') + CL.col('profissionais').filter(function (p) { return p.ativo !== false; }).map(function (p) { return opt(p.id, p.nome, f.profId || ''); }).join('') + '</select>', 'Obrigatório para profissionais de saúde. O cadastro fica em Ajustes › Profissionais.') +
+      '<label class="campo-linha"><input id="ac-ativo" type="checkbox"' + (f.ativo ? ' checked' : '') + '> Acesso liberado</label><p class="campo-erro" role="alert" data-erro hidden></p>';
+    var descriptions = { recepcao: 'Cadastra pacientes, agenda, registra a chegada e gerencia pagamentos. Sem acesso ao prontuário.', profissional: 'Consulta o prontuário e realiza atendimentos. Sem acesso aos ajustes e ao financeiro.', admin: 'Acesso completo, incluindo equipe, ajustes, agenda, prontuário e financeiro.' };
+    function descricao() { form.querySelector('[data-funcao]').textContent = descriptions[form.querySelector('#ac-perfil').value]; }
+    form.querySelector('#ac-perfil').addEventListener('change', descricao); descricao();
+    var ocupado = false;
+    function salvar() {
+      if (ocupado || !form.reportValidity()) return false;
+      var get = function (key) { return form.querySelector('#ac-' + key); };
+      var dados = { id: u ? u.id : null, nome: get('nome').value.trim(), email: get('email').value.trim(), perfil: get('perfil').value, profId: get('prof').value || null, ativo: get('ativo').checked };
+      if (dados.perfil === 'profissional' && !dados.profId) { get('prof').focus(); form.querySelector('[data-erro]').textContent = 'Selecione o profissional na agenda.'; form.querySelector('[data-erro]').hidden = false; return false; }
+      ocupado = true;
+      return CL.persist().then(function (ok) { if (!ok) throw new Error('Aguarde os dados terminarem de salvar e tente novamente.'); return Backend.auth.gerenciar(dados); }).then(function () {
+        CL.ui.toast('Acesso atualizado', { kind: 'ok' });
+        if (elAtual) renderAba(elAtual);
+        return true;
+      }).catch(function (err) {
+        form.querySelector('[data-erro]').textContent = err.message || 'Não foi possível salvar o acesso.';
+        form.querySelector('[data-erro]').hidden = false;
+        return false;
+      }).finally(function () { ocupado = false; });
+    }
+    var modal = CL.ui.modal({ titulo: u ? 'Editar acesso' : 'Liberar acesso', corpo: form, botoes: [{ rotulo: 'Cancelar', tipo: 'neutro' }, { rotulo: 'Salvar acesso', tipo: 'primario', acao: salvar }] });
+    form.addEventListener('submit', function (ev) { ev.preventDefault(); Promise.resolve(salvar()).then(function (ok) { if (ok) modal.fechar(); }); });
+    return modal;
+  }
   function renderUsuarios(el) {
+    if (Backend.modo === 'firebase') return renderAcessos(el);
     var lista = CL.col('usuarios').slice().sort(function (a, b) { return (a.ativo === false) - (b.ativo === false) || String(a.nome).localeCompare(String(b.nome), 'pt-BR'); });
     el.innerHTML = '<div class="pilha"><div class="linha-acoes cfg-topo"><p class="texto-2 cfg-cresce">Perfis limitam a interface (recepção não abre o prontuário; só o administrador abre os ajustes). Não substituem contas separadas: quem tem acesso ao navegador vê a lista.</p><button type="button" class="btn btn-primario" data-acao="usr-novo"><i class="ti ti-user-plus" aria-hidden="true"></i>Novo usuário</button></div>' +
       '<div class="card"><ul class="lista-simples">' + lista.map(function (u) {
@@ -446,6 +495,7 @@
       }).join('') + '</ul></div></div>';
   }
   function abrirUsuario(id) {
+    if (Backend.modo === 'firebase') return abrirAcesso(id);
     if (!podeConfig()) return null;
     var u = id ? CL.get('usuarios', id) : null;
     var f = u || { nome: '', perfil: 'recepcao', profId: null, pinHash: '', ativo: true };
@@ -476,6 +526,7 @@
   }
   function salvarUsuario(d) {
     if (!podeConfig()) return Promise.resolve(null);
+    if (Backend.modo === 'firebase') return Promise.reject(new Error('Use o gerenciamento de acessos individuais.'));
     d = d || {};
     var atual = d.id ? CL.get('usuarios', d.id) : null;
     var perfil = ['admin', 'recepcao', 'profissional'].indexOf(d.perfil) >= 0 ? d.perfil : 'recepcao';
@@ -487,7 +538,7 @@
     }
     var pinP = d.pin ? U.sha256(String(d.pin)) : Promise.resolve(null);
     return pinP.then(function (hash) {
-      var obj = Object.assign(atual || { pinHash: '' }, { nome: String(d.nome || '').trim(), perfil: perfil, profId: d.profId || null, ativo: ativo });
+      var obj = Object.assign(atual || { pinHash: '' }, { nome: String(d.nome || '').trim(), perfil: perfil, profId: d.profId || null, ativo: ativo, acessoDelegado: true });
       if (d.id) obj.id = d.id;
       if (hash) obj.pinHash = hash; else if (d.removerPin) obj.pinHash = '';
       if (!obj.nome) return null;

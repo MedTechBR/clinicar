@@ -1,13 +1,42 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Clinicar: cada conta (uma clínica) lê e escreve SÓ a própria árvore users/{uid}/**.
-    match /users/{uid}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+    function membro(clinica) {
+      return request.auth != null
+        && get(/databases/$(database)/documents/acessos/$(request.auth.uid)).data.ativo == true
+        && get(/databases/$(database)/documents/acessos/$(request.auth.uid)).data.clinicaId == clinica;
     }
-    // Tudo o mais é negado (não existe leitura pública nem escrita anônima).
-    match /{document=**} {
-      allow read, write: if false;
+    function perfil() { return get(/databases/$(database)/documents/acessos/$(request.auth.uid)).data.perfil; }
+    function clinico() { return perfil() in ['admin', 'profissional']; }
+    match /acessos/{uid} {
+      allow get: if request.auth != null && request.auth.uid == uid;
+      // Criação, alteração e listagem são feitas pelas funções com validação de administrador.
+      allow list, write: if false;
+    }
+    match /users/{clinica}/{col}/{id} {
+      allow read: if membro(clinica) && (
+        col in ['profissionais', 'procedimentos', 'convenios', 'consultas', 'bloqueios', 'espera', 'notasDia', 'pacientesCadastro']
+        || (col == 'meta' && id in ['cfg', 'tomb', 'logo', 'info'])
+        || (col in ['pacientes', 'evolucoes', 'receitas', 'documentos', 'exames', 'modelos'] && clinico())
+        || (col == 'lancamentos' && perfil() in ['admin', 'recepcao'])
+        || (col == 'auditoria' && (perfil() == 'admin' || resource.data.usuarioId == request.auth.uid))
+      );
+      allow create, update: if membro(clinica) && (
+        (col in ['profissionais', 'procedimentos', 'convenios'] && perfil() == 'admin')
+        || (col == 'meta' && (perfil() == 'admin' || id == 'info'))
+        || (col in ['espera', 'bloqueios', 'notasDia'])
+        || (col == 'consultas' && (clinico() || (
+          request.resource.data.status in ['agendado', 'confirmado', 'chegou', 'faltou', 'cancelado', 'cancelado_tarde', 'cancelado_clinica']
+          && (!exists(/databases/$(database)/documents/users/$(clinica)/consultas/$(id)) || !(resource.data.status in ['em_atendimento', 'finalizado']))
+        )))
+        || (col in ['evolucoes', 'receitas', 'documentos', 'exames', 'modelos'] && clinico())
+        || (col == 'lancamentos' && perfil() in ['admin', 'recepcao'])
+        || (col == 'auditoria' && request.resource.data.usuarioId == request.auth.uid
+          && (!exists(/databases/$(database)/documents/users/$(clinica)/auditoria/$(id)) || request.resource.data == resource.data))
+      );
+      // Exclusões e lápides globais ficam com o administrador; a equipe cancela/inativa.
+      allow delete: if membro(clinica) && perfil() == 'admin' && col != 'usuarios';
+      // Fichas e sua projeção são gravadas juntas por salvarCadastro, nunca pelo cliente.
     }
   }
 }

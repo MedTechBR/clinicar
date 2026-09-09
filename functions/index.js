@@ -67,8 +67,9 @@ async function chamarVertex(contents, model, generationConfig, systemInstruction
   return text;
 }
 
-function exigirLogin(req) {
-  if (!req.auth || !req.auth.uid) throw new HttpsError("unauthenticated", "Entre na sua conta para usar a IA.");
+async function exigirLogin(req) {
+  const usuario = await require("./acessos").exigirAcesso(req);
+  if (!["admin", "profissional"].includes(usuario.perfil)) throw new HttpsError("permission-denied", "Somente profissionais autorizados podem usar a IA.");
 }
 function modeloDe(v) {
   const m = String(v || MODELO_PADRAO);
@@ -88,7 +89,7 @@ const SISTEMA = "Você é um assistente clínico que apoia profissionais de saú
 
 /* ============== gemini: texto → texto ============== */
 exports.gemini = onCall({ region: REGIAO, timeoutSeconds: 120, memory: "256MiB", invoker: "public" }, async (req) => {
-  exigirLogin(req);
+  await exigirLogin(req);
   const d = req.data || {};
   const prompt = String(d.prompt || "");
   const model = modeloDe(d.model);
@@ -105,7 +106,7 @@ exports.gemini = onCall({ region: REGIAO, timeoutSeconds: 120, memory: "256MiB",
 
 /* ============== geminiAudio: áudio (base64) + instrução → texto ============== */
 exports.geminiAudio = onCall({ region: REGIAO, timeoutSeconds: 300, memory: "512MiB", invoker: "public" }, async (req) => {
-  exigirLogin(req);
+  await exigirLogin(req);
   const d = req.data || {};
   const audio = String(d.audio || "");
   const mimeType = String(d.mimeType || "audio/webm");
@@ -124,3 +125,9 @@ exports.geminiAudio = onCall({ region: REGIAO, timeoutSeconds: 300, memory: "512
     throw traduzir(e);
   }
 });
+
+const acessos = require('./acessos');
+exports.acessar = acessos.acessar;
+exports.gerenciarAcesso = acessos.gerenciarAcesso;
+exports.salvarCadastro = acessos.salvarCadastro;
+exports.registrarCobranca = acessos.registrarCobranca;

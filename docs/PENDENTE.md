@@ -13,7 +13,7 @@ Lista viva. Nada daqui aparece como botão morto ou promessa na interface. Fonte
 7. Contas a pagar completas, centros de custo, DRE, múltiplas contas.
 8. Assinatura digital qualificada (ICP-Brasil) dentro do app; validação em validar.iti.gov.br.
 9. Anexos de arquivo (PDF/imagem) no prontuário — exige Storage no Firebase próprio.
-10. Multiusuário real por clínica no Firebase (contas separadas por funcionário com regras por perfil). Na v1 os perfis são locais: limitam a interface, não são segurança forte; o Firebase é uma conta = uma clínica.
+10. **Implementado em setembro/2026:** contas individuais por clínica com regras por função. Ver `ACESSOS.md`.
 11. Service worker / uso offline no modo firebase.
 12. Bloqueio de tela por inatividade e backup cifrado com senha.
 13. Gatilho automático da lista de espera com prazo de resposta e ofertas simultâneas (v1: manual, um por vez, com registro da oferta).
@@ -36,7 +36,7 @@ Lista viva. Nada daqui aparece como botão morto ou promessa na interface. Fonte
 27. **Importação:** aceita só a exportação do sistema anterior (`docs/EXPORTACAO-ANTIGO.md`) e o backup do próprio Clinicar; não lê CSV/planilhas nem exportações de outros sistemas. No modo mesclar, a configuração da clínica do arquivo só preenche campos vazios; no modo substituir, usuários e auditoria são mantidos. Consultas antigas importadas não geram lançamentos financeiros retroativos. Fixture fictícia para teste em `docs/fixtures/antigo-ficticio.json`.
 28. **Textos importados sem paciente** (histórico `docs[]` do sistema anterior) ficam em Ajustes › Dados: podem ser lidos, copiados e vinculados a um paciente, mas não editados nem apagados.
 29. **Domínio próprio** depende do registro pelo dono (`docs/DOMINIO.md`); o `CNAME` está com um endereço de exemplo.
-30. **Firebase Auth multiusuário:** o login por e-mail/senha é uma conta por clínica; os perfis (recepção/profissional/administrador) continuam locais mesmo no modo firebase.
+30. **Substituído em setembro/2026:** o login Firebase identifica a pessoa; permissões e delegação são controladas no servidor.
 
 ## Estado da nuvem (02/09/2026)
 

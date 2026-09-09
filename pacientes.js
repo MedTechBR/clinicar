@@ -239,12 +239,12 @@
       campo('Convênio', '<select class="select" name="convenioId">' + opcoes(conv, p.convenioId || 'particular') + '</select>') +
       campo('Número da carteira', '<input class="input" name="convenioNumero" type="text" autocomplete="off" value="' + e(p.convenioNumero) + '">') +
       campo('Como conheceu a clínica', '<select class="select" name="origem">' + opcoes(ORIGENS, p.origem) + '</select>') +
-      '</div><h3 class="pac-form-secao">Clínico</h3><div class="campos">' +
+      '</div>' + (CL.can('clinico') ? '<h3 class="pac-form-secao">Clínico</h3><div class="campos">' +
       campo('Alergias', '<input class="input" name="alergias" type="text" autocomplete="off" placeholder="Ex.: dipirona, penicilina" value="' + e(p.alergias) + '">', 'campo-cheio') +
       campo('Problemas / comorbidades', '<textarea class="textarea" name="problemas" rows="3">' + e(p.problemas) + '</textarea>') +
       campo('Medicações em uso', '<textarea class="textarea" name="meds" rows="3" placeholder="Uma por linha">' + e(p.meds) + '</textarea>') +
       campo('Observações', '<textarea class="textarea" name="obs" rows="2">' + e(p.obs) + '</textarea>', 'campo-cheio') +
-      '</div><h3 class="pac-form-secao">Consentimentos</h3><p class="ajuda">Desligados por padrão. Ao ligar, a data é registrada automaticamente.</p><div class="pac-consents">' +
+      '</div>' : '') + '<h3 class="pac-form-secao">Consentimentos</h3><p class="ajuda">Desligados por padrão. Ao ligar, a data é registrada automaticamente.</p><div class="pac-consents">' +
       CONSENTS.map(function (k) {
         var c = p.consentimentos[k[0]];
         return '<div class="pac-consent"><label class="campo-linha"><input type="checkbox" name="cons_' + k[0] + '"' + (c.ativo ? ' checked' : '') + '><span>' + e(k[1]) + '</span></label>' +
@@ -264,6 +264,7 @@
         convenioId: g('convenioId') || 'particular', convenioNumero: g('convenioNumero'), origem: g('origem'),
         alergias: g('alergias'), problemas: g('problemas'), meds: g('meds'), obs: g('obs')
       };
+      if (!CL.can('clinico')) ['alergias', 'problemas', 'meds', 'obs'].forEach(function (key) { delete d[key]; });
       var cons = p.consentimentos;
       CONSENTS.forEach(function (k) {
         var chk = form.querySelector('[name="cons_' + k[0] + '"]').checked;
@@ -527,6 +528,7 @@
   function abaLink(id, aba, ativa) {
     var a = ABAS.filter(function (x) { return x[0] === aba; })[0];
     var clinica = CLINICAS.indexOf(aba) >= 0 && !CL.can('clinico');
+    if (clinica || (aba === 'financeiro' && !CL.can('financeiro'))) return '';
     return '<a href="#/pacientes/' + e(id) + '/' + aba + '" role="tab" aria-selected="' + (ativa ? 'true' : 'false') + '"' + (ativa ? ' aria-current="page"' : '') + '><i class="ti ' + (clinica ? 'ti-lock' : a[2]) + '" aria-hidden="true"></i><span>' + e(a[1]) + '</span></a>';
   }
   function renderFicha(el) {

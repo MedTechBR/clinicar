@@ -1,0 +1,1 @@
+{"firestore":{"rules":"firestore.rules"},"functions":[{"source":"functions","codebase":"default","runtime":"nodejs22"}],"emulators":{"auth":{"port":9097},"firestore":{"port":8097},"functions":{"port":5097},"ui":{"enabled":false},"singleProjectMode":true}}

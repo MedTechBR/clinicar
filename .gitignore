@@ -4,3 +4,5 @@ BRIEF.md
 node_modules/
 CNAME
 config.js.bak
+
+*-debug.log

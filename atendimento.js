@@ -1563,8 +1563,9 @@
     var c = CL.get('consultas', consultaId);
     if (!c) { CL.ui.toast('Consulta não encontrada', { kind: 'erro' }); return Promise.resolve(); }
     if (!c.pacId || !pac(c.pacId)) { CL.ui.toast('Vincule um paciente à consulta antes de iniciar o atendimento', { kind: 'aviso' }); return Promise.resolve(); }
-    var pr = (c.status === 'em_atendimento' || c.status === 'finalizado') ? Promise.resolve() : mudarStatus(consultaId, 'em_atendimento');
-    return pr.then(function () { CL.route.go('#/atendimento/' + encodeURIComponent(consultaId)); }, function (err) { CL.ui.toast(err.message || 'Não foi possível iniciar', { kind: 'erro' }); });
+    if (['agendado', 'confirmado', 'chegou', 'em_atendimento'].indexOf(c.status) < 0) { CL.ui.toast('Esta consulta está encerrada. Reabra pela agenda antes de atender.', { kind: 'aviso' }); return Promise.resolve({ ok: false }); }
+    var pr = c.status === 'em_atendimento' ? Promise.resolve({ ok: true }) : mudarStatus(consultaId, 'em_atendimento');
+    return pr.then(function (r) { if (!r || !r.ok) return r || { ok: false }; CL.route.go('#/atendimento/' + encodeURIComponent(consultaId)); return { ok: true, status: 'em_atendimento' }; }, function (err) { CL.ui.toast(err.message || 'Não foi possível iniciar', { kind: 'erro' }); });
   }
 
   /* =================== tela de atendimento =================== */
@@ -1660,8 +1661,9 @@
     }
     var c = CL.get('consultas', consultaId);
     if (!c) return Promise.resolve();
-    var pr = c.status === 'finalizado' ? Promise.resolve() : mudarStatus(consultaId, 'finalizado');
-    return pr.then(function () {
+    var pr = c.status === 'finalizado' ? Promise.resolve({ ok: true }) : mudarStatus(consultaId, 'finalizado');
+    return pr.then(function (r) {
+      if (!r || !r.ok) { CL.ui.toast((r && r.motivo) || 'Não foi possível finalizar o atendimento.', { kind: 'aviso' }); return { ok: false }; }
       CL.ui.toast('Consulta finalizada', { kind: 'ok' });
       CL.route.go('#/agenda');
     }, function (err) { CL.ui.toast(err.message || 'Não foi possível finalizar', { kind: 'erro' }); });

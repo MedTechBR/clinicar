@@ -23,6 +23,57 @@
   var avisoQuota = null;
 
   function cols() { return CL.COLECOES; }
+  function colsRemotas() {
+    var perfil = FB.acesso && FB.acesso.perfil;
+    return cols().filter(function (col) {
+      if (col === 'usuarios') return false;
+      if (perfil === 'admin') return true;
+      if (col === 'auditoria') return false;
+      if (perfil === 'recepcao') return ['evolucoes', 'receitas', 'documentos', 'exames', 'modelos'].indexOf(col) < 0;
+      return perfil === 'profissional' && col !== 'lancamentos';
+    });
+  }
+  function colecaoRemota(col) { return col === 'pacientes' && FB.acesso && FB.acesso.perfil === 'recepcao' ? 'pacientesCadastro' : col; }
+  function podeGravarCol(col) {
+    if (!FB.acesso) return false;
+    if (col === 'usuarios') return false;
+    if (col === 'auditoria') return true;
+    if (['profissionais', 'procedimentos', 'convenios'].indexOf(col) >= 0) return FB.acesso.perfil === 'admin';
+    return colsRemotas().indexOf(col) >= 0;
+  }
+  function filtrarCache(st) {
+    cols().forEach(function (col) {
+      if (col === 'auditoria' && FB.acesso && FB.acesso.perfil !== 'admin') st[col] = (st[col] || []).filter(function (a) { return a.usuarioId === FB.acesso.id; });
+      else if (colsRemotas().indexOf(col) < 0) st[col] = [];
+    });
+    if (FB.acesso && FB.acesso.perfil === 'recepcao') {
+      st.pacientes = (st.pacientes || []).map(cadastroPublico);
+    }
+    return st;
+  }
+  var CAMPOS_CADASTRO = ['id', 'nome', 'nomeSocial', 'nasc', 'sexo', 'cpf', 'fone', 'email', 'endereco', 'nomeMae', 'naturalidade', 'convenioId', 'convenioNumero', 'origem', 'consentimentos', 'ativo', 'inativadoEm', 'createdAt', 'updatedAt'];
+  function cadastroPublico(p) { var out = {}; CAMPOS_CADASTRO.forEach(function (key) { if (p[key] !== undefined) out[key] = p[key]; }); return out; }
+  function bloquearAcesso(mensagem) {
+    FB.uid = null; FB.acesso = null; Backend.acessoPronto = false;
+    Backend.erroAcesso = mensagem;
+    pararSnapshots();
+    CL.sessao.clear();
+    if (FB.assinante) FB.assinante(CL.defaultState(), {});
+    if (CL.ui.fecharTudo) CL.ui.fecharTudo();
+    CL.route.go('#/login');
+    CL.emit('change', { col: '*' });
+  }
+  function resolverAcesso(u) {
+    FB.acesso = null; FB.uid = null; Backend.acessoPronto = false;
+    if (!u) return Promise.resolve();
+    return FB.mods.fn.httpsCallable(FB.fns, 'acessar')({}).then(function (r) {
+      if (!r.data || r.data.ativo !== true || !r.data.clinicaId || ['admin', 'recepcao', 'profissional'].indexOf(r.data.perfil) < 0) throw new Error('Acesso inválido');
+      FB.acesso = r.data; FB.uid = r.data.clinicaId;
+      Backend.erroAcesso = '';
+    }).catch(function (err) {
+      Backend.erroAcesso = /permission-denied/.test(err.code || '') ? 'Acesso ainda não liberado. Peça ao administrador geral para autorizar sua conta.' : 'Não foi possível verificar seu acesso. Recarregue a página para tentar novamente.';
+    });
+  }
   function lerMeta() {
     try { var m = JSON.parse(ls.getItem(K.meta)); return (m && typeof m === 'object') ? m : {}; } catch (e) { return {}; }
   }
@@ -231,16 +282,16 @@
         var pronto = false;
         var timer = setTimeout(function () { if (!pronto) { pronto = true; resolve(null); } }, 6000);
         FB.mods.auth.onAuthStateChanged(FB.auth, function (u) {
-          FB.uid = u ? u.uid : null;
-          if (!pronto) { pronto = true; clearTimeout(timer); resolve(u); return; }
-          aoMudarAuth(u);
+          if (!pronto) { pronto = true; clearTimeout(timer); resolverAcesso(u).then(function () { resolve(u); }); return; }
+          FB.authReady = aoMudarAuth(u);
         }, function (err) { console.error('[Backend] auth', err); if (!pronto) { pronto = true; resolve(null); } });
       });
     });
   }
   function aoMudarAuth(u) {
     var uidAnterior = FB.uid;
-    FB.uid = u ? u.uid : null;
+    FB.uid = null; FB.acesso = null; Backend.acessoPronto = false; FB.trocandoConta = true;
+    if (CL.session) { CL.sessao.clear(); CL.ui.fecharTudo(); CL.route.go('#/login'); }
     FB.ouvintesAuth.slice().forEach(function (fn) { try { fn(u); } catch (e) { console.error(e); } });
     pararSnapshots();
     if (!u) {
@@ -252,37 +303,49 @@
         CL.emit('sync', { estado: 'erro', em: Date.now(), erro: new Error('sessão encerrada') });
         CL.ui.toast('Sua sessão no servidor terminou. Saia e entre de novo para continuar sincronizando.', { kind: 'aviso', fixo: true });
       }
+      if (uidAnterior && !FB.saindo) bloquearAcesso('Sua sessão terminou. Entre novamente.');
+      FB.trocandoConta = false;
       return;
     }
     /* Cache deste navegador pertence a outra conta? Some antes de qualquer merge/envio. */
+    return resolverAcesso(u).then(function () {
+    if (!FB.acesso) { FB.trocandoConta = false; bloquearAcesso(Backend.erroAcesso); return; }
     var descartou = descartarCacheDeOutraConta(u.uid);
     gravarMeta({ uid: String(u.uid) });
-    FB.trocandoConta = descartou;
-    lerRemoto(u.uid).then(function (remoto) {
+    FB.trocandoConta = true;
+    return lerRemoto(FB.uid).then(function (remoto) {
       aplicarLogoRemota(remoto._logo, !descartou); delete remoto._logo;
       var merged = merge(remoto, descartou ? CL.defaultState() : CL.state);
+      filtrarCache(merged);
       status.ultimoSync = Date.now();
       FB.trocandoConta = false;
-      if (FB.assinante) FB.assinante(merged, { sincronizarTudo: !descartou });
-      if (descartou) {
+      Backend.acessoPronto = true;
+      if (FB.assinante) FB.assinante(merged, {});
+      if (FB.acesso.perfil === 'admin') {
         /* Cache novo só com a conta que entrou (para abrir sem rede) + semente se a conta for nova. */
         Local.save(CL.state, {}).catch(function (e) { console.error('[Backend] cache após troca de conta', e); });
         if (typeof CL.seed === 'function') CL.seed();
       }
+      Backend.acessoPronto = true;
       iniciarSnapshots();
+      CL.emit('change', { col: '*' });
     }).catch(function (e) {
       console.error('[Backend] leitura após login', e);
       FB.trocandoConta = false;
-      if (descartou && FB.assinante) FB.assinante(CL.defaultState(), {});
+      Backend.acessoPronto = false;
+      Backend.erroAcesso = 'Não foi possível carregar os dados. Recarregue para tentar novamente.';
+      if (FB.assinante) FB.assinante(CL.defaultState(), {});
+      CL.emit('change', { col: '*' });
       CL.ui.toast('Não foi possível ler o servidor: ' + traduzirErro(e) + (descartou ? '.' : '. Os dados deste navegador continuam intactos.'), { kind: 'erro', fixo: true });
       CL.emit('sync', { estado: 'erro', em: Date.now(), erro: e });
+    });
     });
   }
   function lerRemoto(uid) {
     var fs = FB.mods.fs;
     var st = CL.defaultState();
-    var tarefas = cols().map(function (col) {
-      return fs.getDocs(fs.collection(FB.db, 'users', uid, col)).then(function (snap) {
+    var tarefas = colsRemotas().map(function (col) {
+      return fs.getDocs(fs.collection(FB.db, 'users', uid, colecaoRemota(col))).then(function (snap) {
         st[col] = snap.docs.map(function (d) { return d.data(); });
       });
     });
@@ -309,16 +372,33 @@
     var arr = state[col] || [];
     for (var i = 0; i < arr.length; i++) if (arr[i] && arr[i].id === id) { local = arr[i]; break; }
     var tombTs = state._tomb ? state._tomb[id] : undefined;
+    if (col === 'pacientes' && local) {
+      return FB.mods.fn.httpsCallable(FB.fns, 'salvarCadastro')({ paciente: limparParaFirestore(local) }).then(function (r) {
+        if (r.data && r.data.paciente && r.data.paciente.updatedAt > local.updatedAt) trazidos.push({ col: col, obj: r.data.paciente });
+      });
+    }
+    if (col === 'auditoria') {
+      if (!local) return Promise.resolve();
+      if (local.usuarioId !== Backend.auth.user.uid) return Promise.resolve();
+      return fs.setDoc(ref, limparParaFirestore(local));
+    }
     return fs.runTransaction(FB.db, function (tx) {
       return tx.get(ref).then(function (snap) {
         var remoto = snap.exists() ? snap.data() : null;
         if (!local) {
-          if (tombTs != null && (!remoto || tombTs >= (+remoto.updatedAt || 0))) tx.delete(ref);
+          if (tombTs != null && (!remoto || tombTs >= (+remoto.updatedAt || 0))) {
+            tx.delete(ref);
+            if (col === 'pacientes') tx.delete(fs.doc(FB.db, 'users', FB.uid, 'pacientesCadastro', id));
+          }
           return;
         }
         if (remoto && (+remoto.updatedAt || 0) > (+local.updatedAt || 0)) { trazidos.push({ col: col, obj: remoto }); return; }
         tx.set(ref, limparParaFirestore(local));
       });
+    }).then(function () {
+      if (col === 'consultas' && local && ['finalizado', 'faltou', 'cancelado_tarde'].indexOf(local.status) >= 0 && local.origem !== 'importacao') {
+        return FB.mods.fn.httpsCallable(FB.fns, 'registrarCobranca')({ consultaId: id });
+      }
     });
   }
   function gravarCfg(state, trazidos) {
@@ -368,15 +448,22 @@
     if (!FB.uid || !FB.assinante) return;
     var fs = FB.mods.fs, uid = FB.uid;
     var agendar = CL.util.debounce(function () {
-      var merged = merge(montarRemoto(), CL.state);
+      if (!FB.acesso || !Backend.acessoPronto) return;
+      var merged = filtrarCache(merge(montarRemoto(), CL.state));
       status.ultimoSync = Date.now();
       FB.assinante(merged, {});
     }, 400);
+    FB.unsubs.push(fs.onSnapshot(fs.doc(FB.db, 'acessos', Backend.auth.user.uid), function (snap) {
+      var current = snap.exists() ? snap.data() : null;
+      if (!current || current.ativo !== true || !FB.acesso || current.perfil !== FB.acesso.perfil || current.clinicaId !== FB.acesso.clinicaId || current.profId !== FB.acesso.profId) {
+        bloquearAcesso('Seu acesso foi alterado. Saia e entre novamente.');
+      }
+    }, function () { bloquearAcesso('Não foi possível validar seu acesso. Entre novamente.'); }));
     var aoErro = function (col) {
-      return function (err) { console.error('[Backend] snapshot ' + col, err); CL.emit('sync', { estado: 'erro', em: Date.now(), erro: err }); };
+      return function (err) { if (/permission-denied/.test(err.code || '')) bloquearAcesso('Seu acesso foi alterado. Entre novamente.'); console.error('[Backend] snapshot ' + col, err); CL.emit('sync', { estado: 'erro', em: Date.now(), erro: err }); };
     };
-    cols().forEach(function (col) {
-      FB.unsubs.push(fs.onSnapshot(fs.collection(FB.db, 'users', uid, col), function (snap) {
+    colsRemotas().forEach(function (col) {
+      FB.unsubs.push(fs.onSnapshot(fs.collection(FB.db, 'users', uid, colecaoRemota(col)), function (snap) {
         FB.remoto[col] = snap.docs.map(function (d) { return d.data(); });
         if (!snap.metadata.hasPendingWrites) agendar();
       }, aoErro(col)));
@@ -412,7 +499,7 @@
     return !m.sincronizadaEm || (+m.updatedAt || 0) > (+m.sincronizadaEm || 0);
   }
   function enviarLogo() {
-    if (status.modo !== 'firebase' || !FB.uid || !FB.mods) return Promise.resolve(false);
+    if (status.modo !== 'firebase' || !FB.uid || !FB.mods || !FB.acesso || FB.acesso.perfil !== 'admin') return Promise.resolve(false);
     var dataUrl = logoLocal();
     var updatedAt = +logoMeta().updatedAt || Date.now();
     if (dataUrl.length > TETO_LOGO) {
@@ -452,31 +539,35 @@
 
   var Firebase = {
     load: function () {
-      if (FB.uid) { descartarCacheDeOutraConta(FB.uid); gravarMeta({ uid: String(FB.uid) }); }
-      var local = Local.load();
+      if (!FB.acesso) return Promise.resolve(CL.defaultState());
+      if (FB.uid) { descartarCacheDeOutraConta(Backend.auth.user.uid); gravarMeta({ uid: String(Backend.auth.user.uid) }); }
+      var local = filtrarCache(Local.load());
       if (!FB.uid) return Promise.resolve(local);
       return lerRemoto(FB.uid).then(function (remoto) {
         aplicarLogoRemota(remoto._logo, true); delete remoto._logo;
         var merged = merge(remoto, local);
+        filtrarCache(merged);
         status.ultimoSync = Date.now();
+        Backend.acessoPronto = true;
         return merged;
       }).catch(function (e) {
         console.error('[Backend] leitura remota falhou', e);
-        CL.ui.toast('Não foi possível ler o servidor: ' + traduzirErro(e) + '. Usando os dados deste navegador.', { kind: 'erro', fixo: true });
+        CL.ui.toast('Não foi possível ler o servidor: ' + traduzirErro(e) + '. Recarregue para tentar novamente.', { kind: 'erro', fixo: true });
         CL.emit('sync', { estado: 'erro', em: Date.now(), erro: e });
-        return local;
+        Backend.erroAcesso = 'Não foi possível carregar os dados. Recarregue para tentar novamente.';
+        return CL.defaultState();
       });
     },
     save: function (state, opts) {
       opts = opts || {};
-      if (FB.trocandoConta) {
+      if (FB.trocandoConta || !FB.acesso || !Backend.acessoPronto) {
         /* Entre descartar o cache da outra conta e receber o servidor, a memória ainda é da conta anterior: não grava nada. */
         console.warn('[Backend] gravação ignorada durante a troca de conta');
-        return Promise.resolve();
+        return Promise.reject(new Error('Aguarde a verificação do acesso antes de salvar.'));
       }
-      return Local.save(state, opts).then(function () {
-        if (!FB.uid) return;
-        gravarMeta({ uid: String(FB.uid) });
+      return Local.save(filtrarCache(CL.util.clone ? CL.util.clone(state) : JSON.parse(JSON.stringify(state))), opts).then(function () {
+        if (!FB.uid || !FB.acesso) return;
+        gravarMeta({ uid: String(Backend.auth.user.uid) });
         if (!navigator.onLine) {
           status.pendentes = true;
           var off = new Error('Sem rede: as alterações ficam neste navegador e sobem quando a conexão voltar.');
@@ -486,13 +577,17 @@
         var sujos = opts.sujos || {};
         var tarefas = [];
         Object.keys(sujos).forEach(function (col) {
-          if (cols().indexOf(col) < 0) return;
+          if (!podeGravarCol(col)) return;
           sujos[col].forEach(function (id) { if (String(id).indexOf('.') < 0) tarefas.push({ col: col, id: String(id) }); });
         });
         var trazidos = [];
-        return emParalelo(tarefas, 4, function (t) { return gravarItem(state, t.col, t.id, trazidos); })
-          .then(function () { if (opts.cfg) return gravarCfg(state, trazidos); })
-          .then(function () { if (opts.tomb) return gravarTomb(state); })
+        // A consulta só é enviada depois da ficha: outro aparelho nunca recebe a fila antes do cadastro.
+        var pacientes = tarefas.filter(function (t) { return t.col === 'pacientes'; });
+        var demais = tarefas.filter(function (t) { return t.col !== 'pacientes'; });
+        return emParalelo(pacientes, 4, function (t) { return gravarItem(state, t.col, t.id, trazidos); })
+          .then(function () { return emParalelo(demais, 4, function (t) { return gravarItem(state, t.col, t.id, trazidos); }); })
+          .then(function () { if (opts.cfg && FB.acesso.perfil === 'admin') return gravarCfg(state, trazidos); })
+          .then(function () { if (opts.tomb && FB.acesso.perfil === 'admin') return gravarTomb(state); })
           .then(function () {
             var fs = FB.mods.fs;
             return fs.setDoc(fs.doc(FB.db, 'users', FB.uid, 'meta', 'info'), { versao: 1, ultimoSync: Date.now() }, { merge: true });
@@ -514,7 +609,9 @@
     },
     subscribe: function (fn) {
       FB.assinante = fn;
-      var unLocal = Local.subscribe(fn);
+      var unLocal = Local.subscribe(function (st) {
+        if (FB.acesso && Backend.acessoPronto && donoCache() === Backend.auth.user.uid) fn(filtrarCache(st));
+      });
       iniciarSnapshots();
       return function () { unLocal(); pararSnapshots(); FB.assinante = null; };
     }
@@ -533,10 +630,10 @@
         status.modo = 'firebase'; adaptador = Firebase; Backend.modo = 'firebase';
         return { modo: 'firebase' };
       }).catch(function (e) {
-        console.warn('[Backend] Firebase indisponível, seguindo em modo local:', e && e.message);
-        status.modo = 'local'; adaptador = Local; Backend.modo = 'local';
-        CL.ui.toast('Sem acesso ao servidor; modo local', { kind: 'aviso', ms: 6000 });
-        return { modo: 'local' };
+        console.warn('[Backend] Firebase indisponível:', e && e.message);
+        status.modo = 'firebase'; adaptador = Firebase; Backend.modo = 'firebase';
+        Backend.erroAcesso = 'Não foi possível conectar. Verifique a internet e recarregue a página.';
+        return { modo: 'firebase' };
       });
     },
     load: function () { return Promise.resolve().then(function () { return adaptador.load(); }); },
@@ -552,25 +649,32 @@
     },
     problemaCarga: function () { return problemaCarga; },
     auth: {
+      get acesso() { return FB.acesso || null; },
+      gerenciar: function (dados) { return FB.mods.fn.httpsCallable(FB.fns, 'gerenciarAcesso')(dados).then(function (r) { return r.data; }); },
       get user() { return FB.auth ? FB.auth.currentUser : null; },
       entrar: function (email, senha) {
         if (status.modo !== 'firebase') return Promise.reject(new Error('modo local'));
-        return FB.mods.auth.signInWithEmailAndPassword(FB.auth, String(email || '').trim(), String(senha || '')).then(function (c) { return c.user; })
+        if (!FB.mods || !FB.auth) return Promise.reject(new Error('Recarregue a página para conectar ao servidor.'));
+        return FB.mods.auth.signInWithEmailAndPassword(FB.auth, String(email || '').trim(), String(senha || '')).then(function (c) { return Promise.resolve(FB.authReady).then(function () { return c.user; }); })
           .catch(function (e) { var t = new Error(traduzirErro(e)); t.code = e && e.code; throw t; });
       },
       sair: function () {
         if (status.modo !== 'firebase') return Promise.resolve();
+        var pronto = Backend.acessoPronto;
+        return (pronto ? CL.persist() : Promise.resolve(true)).then(function (ok) {
+        if (!ok) throw new Error('Ainda há alterações sem salvar. Tente novamente antes de sair.');
         FB.saindo = true;
         pararSnapshots();
         /* A logo é da conta: garante que subiu antes de limpar este navegador (senão o "Sair" a perderia). */
         return (logoPendente() ? enviarLogo() : Promise.resolve(false)).then(function () {
-          return FB.mods.auth.signOut(FB.auth).catch(function (e) { console.error(e); });
+          return FB.mods.auth.signOut(FB.auth);
         }).then(function () {
           limparCacheLocal();
-          FB.uid = null;
+          FB.uid = null; FB.acesso = null; Backend.acessoPronto = false;
           if (FB.mods.fs.clearIndexedDbPersistence) {
             return FB.mods.fs.terminate(FB.db).then(function () { return FB.mods.fs.clearIndexedDbPersistence(FB.db); }).catch(function () { /* outra aba aberta */ });
           }
+        });
         });
       },
       aoMudar: function (fn) {

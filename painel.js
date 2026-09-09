@@ -117,7 +117,7 @@
   /* =================== render =================== */
   function cartaoHtml(item, coluna) {
     var pr = proc(item.procId);
-    var podeAbrirProntuario = CL.can('clinico');
+    var podeAbrirProntuario = CL.can('clinico') && !!pac(item.pacId);
     var muitosProfs = profsAtivos().length > 1 && !profDaSessao();
     var sub = [item.hora, muitosProfs ? nomeProf(item.profId) : '', pr ? pr.nome : ''].filter(Boolean).join(' · ');
     var tempo = '';
@@ -128,11 +128,12 @@
     if (coluna === 'aguardando') {
       if (item.status === 'agendado') acoes += '<button type="button" class="btn btn-neutro btn-pequeno" data-acao="status" data-id="' + e(item.consultaId) + '" data-status="confirmado"><i class="ti ti-check" aria-hidden="true"></i>Confirmar</button>';
       acoes += '<button type="button" class="btn btn-primario btn-pequeno" data-acao="status" data-id="' + e(item.consultaId) + '" data-status="chegou"><i class="ti ti-door-enter" aria-hidden="true"></i>Chegou</button>';
+      if (podeAbrirProntuario) acoes += '<button type="button" class="btn btn-primario btn-pequeno" data-acao="iniciar" data-id="' + e(item.consultaId) + '">Iniciar atendimento</button>';
     } else if (coluna === 'naSala') {
-      acoes += '<button type="button" class="btn btn-primario btn-pequeno" data-acao="iniciar" data-id="' + e(item.consultaId) + '"' + (podeAbrirProntuario ? '' : ' disabled title="Só o profissional inicia o atendimento"') + '><i class="ti ti-player-play" aria-hidden="true"></i>Iniciar</button>';
+      acoes += '<button type="button" class="btn btn-primario btn-pequeno" data-acao="iniciar" data-id="' + e(item.consultaId) + '"' + (podeAbrirProntuario ? '' : ' disabled title="Só o profissional inicia o atendimento"') + '><i class="ti ti-player-play" aria-hidden="true"></i>Iniciar atendimento</button>';
     } else {
       if (podeAbrirProntuario) acoes += '<a class="btn btn-neutro btn-pequeno" href="#/atendimento/' + e(item.consultaId) + '"><i class="ti ti-notes" aria-hidden="true"></i>Abrir</a>';
-      acoes += '<button type="button" class="btn btn-primario btn-pequeno" data-acao="status" data-id="' + e(item.consultaId) + '" data-status="finalizado"><i class="ti ti-circle-check" aria-hidden="true"></i>Finalizar</button>';
+      if (podeAbrirProntuario) acoes += '<button type="button" class="btn btn-primario btn-pequeno" data-acao="status" data-id="' + e(item.consultaId) + '" data-status="finalizado"><i class="ti ti-circle-check" aria-hidden="true"></i>Finalizar</button>';
     }
     acoes += '<button type="button" class="btn btn-icone btn-fantasma" data-acao="consulta" data-id="' + e(item.consultaId) + '" aria-label="Ver consulta"><i class="ti ti-dots" aria-hidden="true"></i></button>';
     return '<div class="pn-cartao card' + (item.encaixe ? ' is-encaixe' : '') + '"><div class="pn-cartao-topo">' +
@@ -236,7 +237,7 @@
       var chamar = (meu && CL.can('clinico') && sala.naSala.length) ? '<button type="button" class="btn btn-primario btn-pequeno pn-chamar" data-acao="chamar"><i class="ti ti-player-play" aria-hidden="true"></i>Chamar próximo</button>' : '';
       html += '<h2 class="pn-secao"><i class="ti ti-armchair" aria-hidden="true"></i>Sala de espera</h2><div class="pn-sala">' +
         colunaHtml('Aguardando chegada', 'ti-clock', sala.aguardando, 'aguardando') +
-        colunaHtml('Na sala', 'ti-armchair', sala.naSala, 'naSala', chamar) +
+        colunaHtml('Sala de espera', 'ti-armchair', sala.naSala, 'naSala', chamar) +
         colunaHtml('Em atendimento', 'ti-stethoscope', sala.emAtendimento, 'emAtendimento') + '</div>';
     }
     html += '<div class="pn-grade">' + proximosHtml() + faltasHtml() + receitaHtml() + aniversariantesHtml() + lembretesHtml() + '</div></div>';

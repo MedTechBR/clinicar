@@ -39,3 +39,8 @@ Com a config preenchida o app passa a sincronizar entre aparelhos e libera a IA
 - `docs/PENDENTE.md` — o que **não** está nesta versão
 - `docs/EXPORTACAO-ANTIGO.md` — como trazer os dados do sistema anterior
 - `docs/DOMINIO.md` — apontar um domínio próprio
+
+## Contas e recepção
+
+O Firebase usa contas individuais com funções atribuídas pelo administrador.
+Veja [Contas individuais e recepção](docs/ACESSOS.md) e [Testes isolados](tests/README.md).
