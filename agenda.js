@@ -906,7 +906,7 @@
     var l2 = [pr && pr.nome, cv && cv.nome].filter(Boolean).join(' · ');
     var dica = [c.hora + '–' + U.hhmm(a + dur), nomePac(c), l2, stt.rotulo + (c.encaixe ? ' · encaixe' : ''), c.obs].filter(Boolean).join(' · ');
     return '<div class="ag-bloco ' + stt.classe + (c.encaixe ? ' is-encaixe' : '') + (arrastavel(c) ? ' is-movel' : '') + '" data-id="' + e(c.id) + '" role="button" tabindex="0" aria-label="' + e(dica) + '" title="' + e(dica) + '"' +
-      ' style="top:' + top + 'px;height:' + h + 'px;left:' + left + '%;width:calc(' + w + '% - 3px);border-left-color:' + e((pr && pr.cor) || '#626973') + ';z-index:' + Math.min(2 + idx, 18) + '">' +
+      ' style="top:' + top + 'px;height:' + h + 'px;left:' + left + '%;width:calc(' + w + '% - 3px);border-left-color:' + e((pr && pr.cor) || '#626973') + ';--pc:' + e((pr && pr.cor) || '#626973') + ';z-index:' + Math.min(2 + idx, 18) + '">' +
       '<span class="ag-l1"><span class="tnum">' + e(c.hora) + '</span> <span class="nome-paciente">' + e(nomePac(c)) + '</span></span>' +
       (h >= 30 && l2 ? '<span class="ag-l2">' + e(l2) + '</span>' : '') +
       (icones ? '<span class="ag-icones">' + icones + '</span>' : '') +

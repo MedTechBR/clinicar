@@ -547,6 +547,13 @@
       do { antes = s; s = s.replace(/^(dr|dra|dr[ªa]|prof|profa|prof[ªa]|sr|sra|enf|enfa|enf[ªa])\.?\s+/i, ''); } while (s !== antes);
       return s;
     },
+    /* matiz estável por id (avatar colorido); 8 tons com texto branco ≥ 4,5:1 */
+    corDe: function (id) {
+      var CORES = ['#2B5CE6', '#7C3AED', '#C2410C', '#0B7A56', '#BE185D', '#0E7490', '#9333EA', '#B45309'];
+      var h = 0, str = String(id || '');
+      for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0;
+      return CORES[Math.abs(h) % CORES.length];
+    },
     iniciais: function (nome) {
       var partes = CL.util.semTitulo(nome).split(/\s+/).filter(Boolean);
       if (!partes.length) return '';
@@ -1036,6 +1043,8 @@
     requestAnimationFrame(function () { el.scrollTop = v; });
   }
   function marcarNav(vista) {
+    /* a cor da seção (camada viva do styles.css) vem deste atributo */
+    document.body.setAttribute('data-vista', vista);
     var links = document.querySelectorAll('#nav a[data-vista]');
     Array.prototype.forEach.call(links, function (a) {
       if (a.getAttribute('data-vista') === vista) a.setAttribute('aria-current', 'page');
@@ -1097,6 +1106,34 @@
     marcarNav(r.vista);
     CL.keys._vista = r.vista;
     CL.emit('route', r);
+    vivo(el);
+  }
+  /* Movimento na troca de tela: blocos entram em cascata e os números contam até o valor.
+     A classe fica só ~1 s; o que a tela redesenhar depois disso aparece parado. */
+  var timerVivo = null;
+  function vivo(el) {
+    if (!el || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    document.body.classList.add('vivo-entra');
+    clearTimeout(timerVivo);
+    timerVivo = setTimeout(function () { document.body.classList.remove('vivo-entra'); }, 1100);
+    setTimeout(function () { contarNumeros(el); }, 60);
+  }
+  function contarNumeros(el) {
+    Array.prototype.forEach.call(el.querySelectorAll('.kpi-numero'), function (n) {
+      if (n.getAttribute('data-contou')) return;
+      var txt = n.textContent.trim(), m = /^(R\$\s?)?(-?[\d.]+)(,(\d{2}))?$/.exec(txt);
+      if (!m) return;
+      var dinheiro = !!m[1], alvo = parseInt(m[2].replace(/\./g, ''), 10) * (m[3] ? 100 : 1) + (m[4] ? (m[2].charAt(0) === '-' ? -1 : 1) * parseInt(m[4], 10) : 0);
+      if (!isFinite(alvo) || alvo === 0) return;
+      n.setAttribute('data-contou', '1');
+      var t0 = performance.now(), dur = 700;
+      (function passo(t) {
+        if (!n.isConnected) return;
+        var k = Math.min(1, (t - t0) / dur), v = Math.round(alvo * (1 - Math.pow(1 - k, 3)));
+        n.textContent = dinheiro ? CL.fmt.dinheiro(v) : String(v);
+        if (k < 1) requestAnimationFrame(passo); else n.textContent = txt;
+      })(t0);
+    });
   }
   CL.route = {
     register: function (vista, modulo) { rotas[vista] = modulo; },

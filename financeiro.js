@@ -432,7 +432,8 @@
   }
   function kpiHtml(itens) {
     return '<div class="grade-cards fin-kpis">' + itens.map(function (k) {
-      return '<div class="card kpi' + (k.classe ? ' ' + k.classe : '') + '"><span class="kpi-numero">' + e(CL.fmt.dinheiro(k.valor)) + '</span><span class="kpi-rotulo">' + e(k.rotulo) + (k.sub ? ' <small class="texto-3">· ' + e(k.sub) + '</small>' : '') + '</span></div>';
+      var ic = { 'Recebido': ['ti-circle-check', 'verde'], 'Pendente': ['ti-hourglass', 'ambar'], 'Despesas': ['ti-receipt', 'rosa'] }[k.rotulo] || ['ti-scale', k.classe === 'is-erro' ? 'vermelho' : 'azul'];
+      return '<div class="card kpi' + (k.classe ? ' ' + k.classe : '') + '" data-cor="' + ic[1] + '"><span class="ic-bola" aria-hidden="true"><i class="ti ' + ic[0] + '"></i></span><span class="kpi-numero">' + e(CL.fmt.dinheiro(k.valor)) + '</span><span class="kpi-rotulo">' + e(k.rotulo) + (k.sub ? ' <small class="texto-3">· ' + e(k.sub) + '</small>' : '') + '</span></div>';
     }).join('') + '</div>';
   }
 

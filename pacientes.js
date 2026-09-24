@@ -511,7 +511,7 @@
       var f = faltas(p.id);
       var idade = CL.fmt.idade(p.nasc);
       h += '<tr data-id="' + e(p.id) + '">' +
-        '<td data-rotulo="Nome"><a class="pac-nome nome-paciente" href="#/pacientes/' + e(p.id) + '">' + e(CL.nomeExibido(p.nome)) + '</a>' + (p.nomeSocial && !(CL.session && CL.session.privacidade) ? ' <span class="texto-3">(' + e(p.nomeSocial) + ')</span>' : '') + ' ' + selo(p.id) + '</td>' +
+        '<td data-rotulo="Nome"><span class="avatar avatar-sm" style="--cor:' + CL.util.corDe(p.id) + '" aria-hidden="true">' + e(CL.util.iniciais(p.nome) || '--') + '</span><a class="pac-nome nome-paciente" href="#/pacientes/' + e(p.id) + '">' + e(CL.nomeExibido(p.nome)) + '</a>' + (p.nomeSocial && !(CL.session && CL.session.privacidade) ? ' <span class="texto-3">(' + e(p.nomeSocial) + ')</span>' : '') + ' ' + selo(p.id) + '</td>' +
         '<td data-rotulo="Nascimento" class="tnum">' + (p.nasc ? e(CL.fmt.data(p.nasc)) + (idade ? ' <span class="texto-3">· ' + e(idade) + '</span>' : '') : '<span class="texto-3">—</span>') + '</td>' +
         '<td data-rotulo="Telefone" class="tnum">' + (p.fone ? e(CL.fmt.fone(p.fone)) : '<span class="texto-3">—</span>') + '</td>' +
         '<td data-rotulo="Convênio">' + e(convNome(p.convenioId)) + '</td>' +
@@ -548,7 +548,7 @@
     var iaOk = window.Backend && Backend.ai && Backend.ai.disponivel() && CL.can('clinico');
     el.innerHTML = '<div class="tela pac-ficha">' +
       '<div class="pac-voltar"><a href="#/pacientes" class="btn btn-fantasma btn-pequeno"><i class="ti ti-arrow-left" aria-hidden="true"></i>Pacientes</a></div>' +
-      '<header class="pac-cabeca card"><div class="avatar avatar-lg" aria-hidden="true">' + e(CL.util.iniciais(p.nome) || '--') + '</div>' +
+      '<header class="pac-cabeca card"><div class="avatar avatar-lg" style="--cor:' + CL.util.corDe(p.id) + '" aria-hidden="true">' + e(CL.util.iniciais(p.nome) || '--') + '</div>' +
       '<div class="pac-cabeca-info"><h1 class="nome-paciente">' + e(CL.nomeExibido(p.nome)) + '</h1>' +
       (p.nomeSocial && !priv ? '<div class="pac-social">' + e(p.nomeSocial) + ' <span class="texto-3">(nome social)</span></div>' : '') +
       '<div class="pac-meta texto-2">' + e(meta.join(' · ')) + '</div>' +

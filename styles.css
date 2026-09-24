@@ -1,7 +1,8 @@
 /* Clinicar — styles.css
    Tokens (ESPEC §7.1), reset, tipografia, componentes (§7.3), casca, grade da agenda e impressão.
-   Uma cor de acento (verde Clinicar). Cores semânticas só para status/feedback. Sem gradientes.
-   Todos os tokens vivem NESTE :root — não existe camada de tema redefinindo :root mais abaixo. */
+   Os tokens-base vivem NESTE :root. Desde 23/09/2026 a "camada viva" (fim do arquivo) redefine
+   o acento por seção em body[data-vista] — é a única redefinição, e não toca o :root.
+   Sem gradientes, sem emoji. */
 
 :root {
   /* acento: verde profundo; o azul genérico de software clínico não é a identidade do produto */
@@ -9,20 +10,23 @@
   /* o "agora": paciente em atendimento, linha da hora, o que exige ação */
   --agora:#C8442A; --agora-fraco:#FCE7E0; --agora-texto:#A03318;
   /* tinta com viés verde sobre papel quente (tinta-3 dá 5,1:1 sobre --painel) */
-  --tinta:#17211C; --tinta-2:#3E4944; --tinta-3:#5C665F;
-  --papel:#FBFAF7; --painel:#F0EEE7; --linha:#E4E1D7; --linha-forte:#CFCBBD; --branco:#FFFFFF;
+  /* neutros frios (23/09/2026): a cor agora vem de cada seção; o fundo não disputa com ela.
+     tinta-3 sobre --painel = 4,9:1 */
+  --tinta:#1B2230; --tinta-2:#434C5B; --tinta-3:#5E6776;
+  --papel:#F4F6F9; --painel:#ECEFF4; --linha:#E2E6EC; --linha-forte:#CAD1DB; --branco:#FFFFFF;
   --ok:#0B5B39; --ok-fraco:#DCEFE4; --aviso:#7A4A00; --aviso-fraco:#FFEBCC; --erro:#98252F; --erro-fraco:#FADDE0;
   /* sombra quase invisível: a hierarquia vem da linha e da cor, não do blur */
   --sombra-1:0 1px 1px rgba(23,33,28,.05); --sombra-2:0 4px 14px rgba(23,33,28,.08); --sombra-3:0 14px 40px rgba(23,33,28,.14);
-  --raio-1:4px; --raio-2:8px; --raio-3:12px;
+  --raio-1:10px; --raio-2:14px; --raio-3:22px;
   --fonte:'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --display:'Bricolage Grotesque', 'Inter', system-ui, sans-serif;   /* só títulos e marca; dado é sempre Inter */
   --t-12:12px; --t-13:13px; --t-14:14px; --t-16:16px; --t-20:20px; --t-24:24px; --t-30:30px;
   --e-1:4px; --e-2:8px; --e-3:12px; --e-4:16px; --e-5:24px; --e-6:32px; --e-7:48px;
   --hora-px:60px;
-  --nav-w:64px; --topo-h:52px; --drawer-w:420px;
+  --nav-w:88px; --topo-h:56px; --drawer-w:420px;
   --alvo:40px;
-  --dur:.16s;
+  --dur:.18s;
+  --mola:cubic-bezier(.34,1.56,.64,1);   /* passa um pouco do alvo e volta: o "pulo" dos ícones */
 }
 body[data-densidade="compacto"] { --hora-px:48px; }
 body[data-densidade="confortavel"] { --hora-px:80px; }
@@ -1006,4 +1010,284 @@ h1, h2, h3, .marca, .ag-cabeca h2, .vista-titulo {
    a duração da consulta na grade e não pode ser esticada. */
 @media (max-width:768px) {
   .marca, .topo-usuario, .topo-pill, .ag-chip { min-height:44px; display:inline-flex; align-items:center; }
+}
+
+
+/* ================================================================
+   CAMADA VIVA (23/09/2026) — pedido do dono: "colorido, ícones
+   arredondados e interativos".
+   1. Cada seção tem cor própria (--ac em body[data-vista]); o acento
+      de todos os componentes passa a ser ela.
+   2. Ícones em círculo colorido (menu, indicadores, colunas, abas).
+   3. Pílulas e cantos grandes; cartões com sombra leve que sobem ao
+      passar o mouse.
+   4. Movimento: entrada em cascata na troca de tela (body.vivo-entra,
+      ligado por core.js ~1 s), números que contam, ícones que pulam.
+   Fora, como sempre: gradiente, emoji. prefers-reduced-motion desliga
+   tudo (regra no bloco de larguras).
+   ================================================================ */
+
+/* ---- paleta nomeada (texto branco sobre todas ≥ 4,5:1) ---- */
+[data-cor="azul"]     { --k:#2B5CE6; }
+[data-cor="indigo"]   { --k:#4F46E5; }
+[data-cor="violeta"]  { --k:#7C3AED; }
+[data-cor="rosa"]     { --k:#BE185D; }
+[data-cor="vermelho"] { --k:#C0262D; }
+[data-cor="ambar"]    { --k:#B45309; }
+[data-cor="verde"]    { --k:#0B7A56; }
+[data-cor="ciano"]    { --k:#0E7490; }
+
+/* ---- cor por seção ---- */
+body { --ac:#0B6B4F; }
+body[data-vista="painel"]      { --ac:#0B7A56; }
+body[data-vista="agenda"]      { --ac:#2B5CE6; }
+body[data-vista="pacientes"]   { --ac:#7C3AED; }
+body[data-vista="financeiro"]  { --ac:#C2410C; }
+body[data-vista="config"]      { --ac:#475569; }
+body[data-vista="atendimento"] { --ac:#BE185D; }
+body[data-vista] {
+  --acento:var(--ac);
+  --acento-hover:color-mix(in srgb, var(--ac) 84%, #000);
+  --acento-texto:color-mix(in srgb, var(--ac) 86%, #000);
+  --acento-fraco:color-mix(in srgb, var(--ac) 11%, #fff);
+  --acento-claro:color-mix(in srgb, var(--ac) 55%, #fff);
+}
+body { background:var(--papel); }
+
+/* ---- círculo de ícone (reutilizável) ---- */
+.ic-bola {
+  width:40px; height:40px; border-radius:50%; flex:none; display:inline-flex; align-items:center; justify-content:center;
+  background:var(--k, var(--acento)); color:#fff; font-size:20px;
+  box-shadow:0 6px 14px -6px color-mix(in srgb, var(--k, var(--acento)) 70%, transparent);
+  transition:transform .3s var(--mola);
+}
+
+/* ---- topo ---- */
+#topo { box-shadow:0 1px 0 var(--linha); border-bottom:0; }
+.marca-icone { background:#0B6B4F; width:34px; height:34px; border-radius:50%; font-size:19px; transition:transform .35s var(--mola); }
+.marca:hover .marca-icone { transform:rotate(-12deg) scale(1.08); }
+.marca-nome { font-size:18px; }
+.topo-pill { height:34px; transition:background var(--dur), transform var(--dur); }
+.topo-pill:hover { background:var(--painel); }
+#topo-priv { border-radius:50%; }
+.topo-usuario { border-radius:999px; padding-right:12px; }
+.topo-usuario .avatar { background:var(--acento); color:#fff; transition:background var(--dur); }
+
+/* ---- menu lateral: claro, ícone de cada seção no círculo da sua cor ---- */
+#nav a[data-vista="agenda"]     { --c:#2B5CE6; }
+#nav a[data-vista="pacientes"]  { --c:#7C3AED; }
+#nav a[data-vista="painel"]     { --c:#0B7A56; }
+#nav a[data-vista="financeiro"] { --c:#C2410C; }
+#nav a[data-vista="config"]     { --c:#475569; }
+#nav { background:var(--branco); border-right:1px solid var(--linha); padding:var(--e-3) var(--e-2); gap:6px; }
+#nav a {
+  min-height:72px; gap:5px; border-radius:18px; color:var(--tinta-2); font-size:11.5px; font-weight:600;
+  transition:background var(--dur), color var(--dur);
+}
+#nav a .nav-ic {
+  width:42px; height:42px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+  background:color-mix(in srgb, var(--c) 13%, #fff); color:var(--c);
+  transition:transform .32s var(--mola), background var(--dur), color var(--dur), box-shadow var(--dur);
+}
+#nav a i { font-size:21px; }
+#nav a:hover { background:color-mix(in srgb, var(--c) 6%, #fff); color:var(--tinta); }
+#nav a:hover .nav-ic { transform:translateY(-2px) scale(1.08) rotate(-8deg); }
+#nav a:active .nav-ic { transform:scale(.9); }
+#nav a[aria-current="page"] { background:color-mix(in srgb, var(--c) 9%, #fff); color:color-mix(in srgb, var(--c) 86%, #000); box-shadow:none; }
+#nav a[aria-current="page"] .nav-ic {
+  background:var(--c); color:#fff; box-shadow:0 8px 16px -6px color-mix(in srgb, var(--c) 75%, transparent);
+  animation:nav-pula .5s var(--mola);
+}
+@keyframes nav-pula { 0% { transform:scale(.8); } 60% { transform:scale(1.12); } 100% { transform:none; } }
+
+/* ---- títulos: um fio da cor da seção sob o h1 da tela ---- */
+.tela-cabeca h1, .pn-saudacao h1 { position:relative; }
+.tela > .tela-cabeca h1::after, .pn-saudacao h1::after {
+  content:''; display:block; width:36px; height:4px; border-radius:4px; background:var(--acento); margin-top:6px;
+}
+
+/* ---- botões: pílula, sobem um pouco e afundam no clique ---- */
+.btn { border-radius:999px; transition:background var(--dur), border-color var(--dur), box-shadow var(--dur), transform var(--dur), color var(--dur); }
+.btn:active:not(:disabled) { transform:scale(.96); }
+.btn-primario { box-shadow:0 6px 16px -8px color-mix(in srgb, var(--acento) 80%, transparent); }
+.btn-primario:hover { transform:translateY(-1px); box-shadow:0 10px 20px -8px color-mix(in srgb, var(--acento) 85%, transparent); }
+.btn-neutro { border-color:var(--linha-forte); }
+.btn-neutro:hover { background:var(--acento-fraco); border-color:color-mix(in srgb, var(--acento) 35%, #fff); color:var(--acento-texto); }
+.btn-fantasma:hover { background:var(--acento-fraco); color:var(--acento-texto); }
+.btn-icone { border-radius:50%; }
+.btn-icone:hover i { transform:rotate(-8deg) scale(1.1); }
+.btn i { transition:transform .28s var(--mola); }
+.btn-perigo { box-shadow:0 6px 16px -8px rgba(192,38,45,.8); }
+
+/* ---- controle segmentado: trilho em pílula, opção ativa na cor da seção ---- */
+.segmentado { border:0; background:var(--painel); border-radius:999px; padding:3px; gap:2px; }
+.segmentado button { height:calc(var(--alvo) - 6px); border-radius:999px; padding:0 var(--e-4); transition:background var(--dur), color var(--dur), box-shadow var(--dur); }
+.segmentado button + button { border-left:0; }
+.segmentado button:hover { color:var(--tinta); background:rgba(255,255,255,.7); }
+.segmentado button[aria-pressed="true"] { background:var(--acento); color:#fff; box-shadow:0 4px 10px -4px color-mix(in srgb, var(--acento) 80%, transparent); }
+
+/* ---- campos ---- */
+.input, .select, .textarea,
+.campo input:not([type="checkbox"]):not([type="radio"]), .campo select, .campo textarea { border-radius:12px; }
+.input:focus, .select:focus, .textarea:focus, .campo input:focus, .campo select:focus, .campo textarea:focus { box-shadow:0 0 0 4px var(--acento-fraco); }
+/* :not() repetido só para vencer a regra de .campo input, que zerava o recuo e punha a lupa sobre o texto */
+.busca > input:not([type="checkbox"]):not([type="radio"]) { border-radius:999px; padding-left:40px; }
+.busca > i { left:14px; color:var(--acento); }
+input[type="checkbox"], input[type="radio"] { accent-color:var(--acento); }
+
+/* ---- cartões ---- */
+.card { border-radius:20px; border-color:var(--linha); box-shadow:0 1px 2px rgba(16,24,40,.04), 0 6px 18px -10px rgba(16,24,40,.12); }
+.card-titulo i { width:30px; height:30px; border-radius:50%; background:var(--acento-fraco); color:var(--acento); display:inline-flex; align-items:center; justify-content:center; font-size:17px; }
+
+/* ---- indicadores tingidos, cada um de uma cor, com ícone em círculo ---- */
+.kpi[data-cor] {
+  display:grid; grid-template-columns:auto minmax(0, 1fr); grid-template-rows:auto auto; column-gap:12px; row-gap:0; align-items:center;
+  background:color-mix(in srgb, var(--k) 6%, #fff); border-color:color-mix(in srgb, var(--k) 20%, #fff);
+  transition:transform .25s var(--mola), box-shadow var(--dur);
+}
+.kpi[data-cor] .ic-bola { grid-row:1 / span 2; width:44px; height:44px; font-size:22px; }
+.kpi[data-cor] .kpi-numero, .kpi[data-cor] .kpi-rotulo { grid-column:2; min-width:0; }
+.kpi[data-cor] .kpi-numero { color:color-mix(in srgb, var(--k) 88%, #000); font-family:var(--display); letter-spacing:-.02em; }
+.kpi[data-cor] .kpi-rotulo { color:var(--tinta-2); font-weight:500; }
+.kpi[data-cor]:hover { transform:translateY(-3px); box-shadow:0 14px 26px -14px color-mix(in srgb, var(--k) 70%, transparent); }
+.kpi[data-cor]:hover .ic-bola { transform:rotate(-10deg) scale(1.1); }
+.pn-kpis { grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:var(--e-3); }
+.pn-kpi { padding:var(--e-3) 14px; column-gap:10px; }
+.pn-kpi .ic-bola { width:40px; height:40px; font-size:20px; }
+.pn-kpi .kpi-rotulo { font-size:13px; line-height:1.25; }
+.pn-kpi .kpi-numero { font-size:28px; }
+.fin-kpis .kpi-numero { font-size:26px; overflow-wrap:anywhere; }
+
+/* ---- painel: colunas da sala tingidas pelo momento do paciente ---- */
+.pn-coluna { --k:#BE185D; background:color-mix(in srgb, var(--k) 6%, #fff); border:1px solid color-mix(in srgb, var(--k) 16%, #fff); border-radius:24px; padding:var(--e-4) var(--e-3); }
+.pn-coluna[data-chave="aguardando"] { --k:#2B5CE6; }
+.pn-coluna[data-chave="naSala"]     { --k:#B45309; }
+.pn-coluna-cabeca .ic-bola { width:34px; height:34px; font-size:18px; }
+.pn-coluna-cabeca .ic-bola i { color:#fff; font-size:18px; }
+.pn-coluna-cabeca h3 { font-size:var(--t-16); }
+.pn-contador { background:var(--k); border:0; color:#fff; min-width:28px; height:28px; font-size:var(--t-13); }
+.pn-cartao { border-radius:18px; border-color:transparent; transition:transform .25s var(--mola), box-shadow var(--dur); }
+.pn-cartao:hover { transform:translateY(-2px); box-shadow:0 14px 28px -16px rgba(16,24,40,.35); }
+.pn-secao i { width:34px; height:34px; border-radius:50%; background:var(--acento); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:18px; }
+.pn-proximos a { border-radius:12px; }
+.pn-prox-barra, .pn-barra, .fin-tot-barra { border-radius:999px; height:10px; }
+.pn-prox-barra span, .pn-barra span, .fin-tot-fill { border-radius:999px; background:var(--acento); }
+
+/* ---- chips e avisos ---- */
+.chip { font-weight:600; height:26px; padding:0 10px; }
+.aviso-inline { border-radius:16px; padding:var(--e-3) var(--e-4); }
+.aviso-inline > i { width:30px; height:30px; border-radius:50%; background:rgba(255,255,255,.7); display:inline-flex; align-items:center; justify-content:center; }
+
+/* ---- tabelas ---- */
+.tabela-wrap { border-radius:20px; box-shadow:0 1px 2px rgba(16,24,40,.04), 0 6px 18px -10px rgba(16,24,40,.12); }
+.tabela th { font-weight:600; color:var(--tinta-3); font-size:12px; text-transform:none; }
+.tabela tbody tr:nth-child(even) { background:#FAFBFC; }
+.tabela tbody tr { transition:background var(--dur); }
+.tabela tbody tr:hover { background:var(--acento-fraco); }
+.tabela th, .tabela td { height:52px; }
+
+/* ---- avatares: iniciais no círculo da cor da pessoa ---- */
+.avatar[style*="--cor"] { background:var(--cor); color:#fff; }
+.avatar-sm { width:30px; height:30px; font-size:11px; margin-right:10px; vertical-align:middle; transition:transform .3s var(--mola); }
+tr:hover .avatar-sm { transform:scale(1.12) rotate(-6deg); }
+.avatar-lg { width:56px; height:56px; font-size:18px; box-shadow:0 8px 18px -8px color-mix(in srgb, var(--cor, var(--acento)) 80%, transparent); }
+
+/* ---- abas internas (ficha do paciente) em pílula ---- */
+.pac-abas { border-bottom:0; gap:6px; padding:4px; background:var(--painel); border-radius:999px; width:fit-content; max-width:100%; }
+.pac-abas a { border-radius:999px; border-bottom:0; margin-bottom:0; min-height:40px; padding:0 var(--e-4); transition:background var(--dur), color var(--dur); }
+.pac-abas a:hover { background:rgba(255,255,255,.8); }
+.pac-abas a[aria-current="page"] { background:var(--acento); color:#fff; box-shadow:0 4px 10px -4px color-mix(in srgb, var(--acento) 80%, transparent); }
+
+/* ---- ajustes: cada item com ícone num círculo de cor própria ---- */
+.cfg-abas a:nth-child(8n+1) { --c:#2B5CE6; }
+.cfg-abas a:nth-child(8n+2) { --c:#7C3AED; }
+.cfg-abas a:nth-child(8n+3) { --c:#0B7A56; }
+.cfg-abas a:nth-child(8n+4) { --c:#C2410C; }
+.cfg-abas a:nth-child(8n+5) { --c:#BE185D; }
+.cfg-abas a:nth-child(8n+6) { --c:#0E7490; }
+.cfg-abas a:nth-child(8n+7) { --c:#B45309; }
+.cfg-abas a:nth-child(8n+8) { --c:#4F46E5; }
+.cfg-abas { gap:4px; }
+.cfg-abas a { border-radius:999px; min-height:46px; padding:0 var(--e-3) 0 6px; transition:background var(--dur), color var(--dur); }
+.cfg-abas a i {
+  width:34px; height:34px; border-radius:50%; flex:none; display:inline-flex; align-items:center; justify-content:center; font-size:18px;
+  background:color-mix(in srgb, var(--c) 13%, #fff); color:var(--c); transition:transform .3s var(--mola), background var(--dur), color var(--dur);
+}
+.cfg-abas a:hover { background:color-mix(in srgb, var(--c) 7%, #fff); }
+.cfg-abas a:hover i { transform:rotate(-10deg) scale(1.08); }
+.cfg-abas a[aria-current="page"] { background:color-mix(in srgb, var(--c) 11%, #fff); color:color-mix(in srgb, var(--c) 86%, #000); }
+.cfg-abas a[aria-current="page"] i { background:var(--c); color:#fff; }
+.cfg-layout { grid-template-columns:220px minmax(0, 1fr); }
+
+/* ---- agenda ---- */
+.ag-bloco { border-radius:10px; transition:transform .2s var(--mola), box-shadow var(--dur); }
+/* Cor do procedimento no bloco: agendado = contorno (ainda não confirmou), confirmado = preenchido.
+   Chegou / em atendimento / finalizado mantêm a cor de status, que é o que a recepção lê de longe. */
+.ag-bloco.st-agendado[style*="--pc"] { background:#fff; color:color-mix(in srgb, var(--pc) 72%, #000); box-shadow:inset 0 0 0 1.5px color-mix(in srgb, var(--pc) 45%, #fff); }
+.ag-bloco.st-confirmado[style*="--pc"] { background:color-mix(in srgb, var(--pc) 16%, #fff); color:color-mix(in srgb, var(--pc) 72%, #000); }
+.ag-bloco:hover { transform:translateX(2px); box-shadow:0 8px 18px -10px rgba(16,24,40,.45); z-index:3; }
+.ag-chip { height:36px; padding:0 14px 0 10px; transition:background var(--dur), transform .25s var(--mola); }
+.ag-chip:hover { transform:translateY(-1px); }
+.ag-chip-cor { width:12px; height:12px; }
+.ag-grade { border-radius:0 0 20px 20px; }
+.ag-mes { border-radius:20px; }
+.ag-mes-dia { transition:background var(--dur); }
+.ag-mes-num { width:28px; height:28px; }
+
+/* ---- janelas ---- */
+.modal { border-radius:26px; }
+.drawer { border-radius:26px 0 0 26px; }
+.menu { border-radius:18px; padding:6px; box-shadow:0 18px 40px -16px rgba(16,24,40,.35); }
+.menu-item { border-radius:12px; }
+.menu-item i { color:var(--acento); }
+.menu-item.is-perigo i { color:var(--erro); }
+.toast { border-radius:16px; }
+.fin-forma { border-radius:18px; transition:transform .25s var(--mola), background var(--dur); }
+.fin-forma:hover { transform:translateY(-2px); }
+.fin-forma i { font-size:22px; }
+.imp-zona { border-radius:22px; }
+.vazio-icone { width:72px; height:72px; border-radius:50%; background:var(--acento-fraco); color:var(--acento); display:inline-flex; align-items:center; justify-content:center; font-size:36px; }
+
+/* ---- login ---- */
+.login-cartao { border-radius:28px; }
+.login-logo { border-radius:50%; width:64px; height:64px; box-shadow:0 10px 22px -10px rgba(11,107,79,.8); }
+.login-usuario { border-radius:18px; transition:transform .25s var(--mola), background var(--dur), border-color var(--dur); }
+.login-usuario:hover { transform:translateY(-2px); background:var(--acento-fraco); border-color:var(--acento); }
+
+/* ---- movimento de entrada (só na troca de tela) ---- */
+@keyframes vivo-sobe { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+@keyframes vivo-enche { from { transform:scaleX(0); } to { transform:none; } }
+@keyframes vivo-surge { 0% { opacity:0; transform:scale(.6); } 70% { transform:scale(1.08); } 100% { opacity:1; transform:none; } }
+body.vivo-entra .tela > *,
+body.vivo-entra .pn-kpis > *,
+body.vivo-entra .fin-kpis > *,
+body.vivo-entra .pn-sala > *,
+body.vivo-entra .pac-tabela tbody tr,
+body.vivo-entra .cfg-abas > a { animation:vivo-sobe .42s cubic-bezier(.2,.8,.2,1) both; }
+body.vivo-entra .tela > *:nth-child(2), body.vivo-entra .pn-kpis > *:nth-child(2), body.vivo-entra .fin-kpis > *:nth-child(2), body.vivo-entra .pn-sala > *:nth-child(2), body.vivo-entra .pac-tabela tbody tr:nth-child(2), body.vivo-entra .cfg-abas > a:nth-child(2) { animation-delay:.05s; }
+body.vivo-entra .tela > *:nth-child(3), body.vivo-entra .pn-kpis > *:nth-child(3), body.vivo-entra .fin-kpis > *:nth-child(3), body.vivo-entra .pn-sala > *:nth-child(3), body.vivo-entra .pac-tabela tbody tr:nth-child(3), body.vivo-entra .cfg-abas > a:nth-child(3) { animation-delay:.10s; }
+body.vivo-entra .tela > *:nth-child(4), body.vivo-entra .pn-kpis > *:nth-child(4), body.vivo-entra .fin-kpis > *:nth-child(4), body.vivo-entra .pac-tabela tbody tr:nth-child(4), body.vivo-entra .cfg-abas > a:nth-child(4) { animation-delay:.15s; }
+body.vivo-entra .tela > *:nth-child(5), body.vivo-entra .pn-kpis > *:nth-child(5), body.vivo-entra .pac-tabela tbody tr:nth-child(5), body.vivo-entra .cfg-abas > a:nth-child(5) { animation-delay:.20s; }
+body.vivo-entra .tela > *:nth-child(n+6), body.vivo-entra .pn-kpis > *:nth-child(n+6), body.vivo-entra .pac-tabela tbody tr:nth-child(n+6), body.vivo-entra .cfg-abas > a:nth-child(n+6) { animation-delay:.25s; }
+body.vivo-entra .ic-bola { animation:vivo-surge .5s var(--mola) .12s both; }
+body.vivo-entra .fin-tot-fill, body.vivo-entra .pn-prox-barra span, body.vivo-entra .pn-barra span { transform-origin:left; animation:vivo-enche .7s cubic-bezier(.2,.8,.2,1) .15s both; }
+
+/* ---- celular: barra inferior com os mesmos círculos ---- */
+@media (max-width:767px) {
+  #nav { height:calc(66px + env(safe-area-inset-bottom)); padding:4px 4px env(safe-area-inset-bottom); gap:2px; border-top:1px solid var(--linha); border-right:0; box-shadow:0 -6px 20px -14px rgba(16,24,40,.3); }
+  #nav a { min-height:60px; border-radius:16px; gap:3px; font-size:10.5px; }
+  #nav a .nav-ic { width:34px; height:34px; }
+  #nav a i { font-size:19px; }
+  #vista { padding-bottom:calc(66px + env(safe-area-inset-bottom)); }
+  .drawer, .drawer-lg, .modal { border-radius:26px 26px 0 0; }
+  .pac-abas { width:auto; }
+  .pn-kpis { grid-template-columns:repeat(2, minmax(0, 1fr)); }
+  .kpi[data-cor] .ic-bola { width:38px; height:38px; font-size:19px; }
+  .tabela-cartoes td .avatar-sm { margin-left:auto; margin-right:8px; }
+  .tabela-cartoes td:has(.avatar-sm) { align-items:center; }
+  .pn-kpi .kpi-numero { font-size:24px; }
+}
+@media print {
+  .card, .tabela-wrap { box-shadow:none; }
+  .tela > .tela-cabeca h1::after, .pn-saudacao h1::after { display:none; }
 }

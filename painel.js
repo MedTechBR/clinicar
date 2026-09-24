@@ -141,12 +141,12 @@
       CL.chipStatus(item.status) + '</div><div class="pn-cartao-sub texto-2">' + e(sub) + '</div>' + tempo + '<div class="linha-acoes pn-cartao-acoes">' + acoes + '</div></div>';
   }
   function colunaHtml(titulo, icone, itens, chave, extra) {
-    return '<section class="pn-coluna" aria-label="' + e(titulo) + '"><header class="pn-coluna-cabeca"><i class="ti ' + icone + '" aria-hidden="true"></i><h3>' + e(titulo) + '</h3><span class="pn-contador">' + itens.length + '</span>' + (extra || '') + '</header>' +
+    return '<section class="pn-coluna" data-chave="' + e(chave) + '" aria-label="' + e(titulo) + '"><header class="pn-coluna-cabeca"><span class="ic-bola" aria-hidden="true"><i class="ti ' + icone + '"></i></span><h3>' + e(titulo) + '</h3><span class="pn-contador">' + itens.length + '</span>' + (extra || '') + '</header>' +
       (itens.length ? '<div class="pn-coluna-corpo">' + itens.map(function (it) { return cartaoHtml(it, chave); }).join('') + '</div>' : '<p class="pn-coluna-vazia texto-3">' + (chave === 'aguardando' ? 'Ninguém a caminho.' : chave === 'naSala' ? 'Sala de espera vazia.' : 'Nenhum atendimento em curso.') + '</p>') + '</section>';
   }
   function kpiCardsHtml(k) {
-    var itens = [['Marcadas', k.marcadas, 'ti-calendar'], ['Confirmadas', k.confirmadas, 'ti-check'], ['Chegaram', k.chegaram, 'ti-door-enter'], ['Em atendimento', k.emAtendimento, 'ti-stethoscope'], ['Finalizadas', k.finalizadas, 'ti-circle-check'], ['Faltas', k.faltas, 'ti-user-off'], ['Encaixes', k.encaixes, 'ti-arrows-diagonal']];
-    return '<div class="pn-kpis">' + itens.map(function (it) { return '<div class="card kpi pn-kpi"><span class="kpi-numero">' + it[1] + '</span><span class="kpi-rotulo"><i class="ti ' + it[2] + '" aria-hidden="true"></i>' + e(it[0]) + '</span></div>'; }).join('') + '</div>';
+    var itens = [['Marcadas', k.marcadas, 'ti-calendar', 'azul'], ['Confirmadas', k.confirmadas, 'ti-check', 'indigo'], ['Chegaram', k.chegaram, 'ti-door-enter', 'ambar'], ['Em atendimento', k.emAtendimento, 'ti-stethoscope', 'rosa'], ['Finalizadas', k.finalizadas, 'ti-circle-check', 'verde'], ['Faltas', k.faltas, 'ti-user-off', 'vermelho'], ['Encaixes', k.encaixes, 'ti-arrows-diagonal', 'violeta']];
+    return '<div class="pn-kpis">' + itens.map(function (it) { return '<div class="card kpi pn-kpi" data-cor="' + it[3] + '"><span class="ic-bola" aria-hidden="true"><i class="ti ' + it[2] + '"></i></span><span class="kpi-numero">' + it[1] + '</span><span class="kpi-rotulo">' + e(it[0]) + '</span></div>'; }).join('') + '</div>';
   }
   function proximosHtml() {
     var h = hoje();
